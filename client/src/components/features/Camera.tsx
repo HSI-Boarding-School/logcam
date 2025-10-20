@@ -239,11 +239,11 @@ export default function OpenCVCameraComponent() {
       </div>
 
       {/* Detection Results */}
-      <div className="absolute bottom-12 max-w-sm w-full text-center">
-        <div className="bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-xl">
-          <h3 className="font-bold text-xl text-gray-800 mb-3 flex items-center justify-center gap-2">
+      <div className="absolute bottom-12 w-full text-center">
+        <div className="p-4 w-full mt-24 bg-transparent mx-auto max-w-7xl py-18 rounded-lg">
+          {/* <h3 className="font-bold text-4xl text-gray-800 mb-3 flex items-center justify-center gap-2">
             🎯 Detection Results
-          </h3>
+          </h3> */}
 
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
@@ -251,33 +251,33 @@ export default function OpenCVCameraComponent() {
             </div>
           )}
 
-          {results.length === 0 ? (
-            <p className="text-gray-500 text-sm italic">
+          {/* {results.length === 0 ? (
+            <p className="text-white text-7xl italic">
               {isConnected ? "Menunggu deteksi..." : "WebSocket belum aktif"}
             </p>
-          ) : (
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {results.map((result, index) => (
-                <div
-                  key={index}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    result.status?.endsWith("_SUCCESS")
-                      ? "bg-green-500 text-white"
-                      : result.status === "NOT_FOUND"
-                      ? "bg-orange-500 text-white"
-                      : "bg-red-500 text-white"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="truncate">{result.name || "Unknown"}</span>
-                    <span className="ml-2 text-xs opacity-75">
+          ) : ( */}
+          <div className="space-y-2 overflow-y-auto">
+            {results.map((result, index) => (
+              <div
+                key={index}
+                className={`px-3 py-2 rounded-md font-extrabold text-7xl ${
+                  result.status?.endsWith("_SUCCESS")
+                    ? "text-green-500 drop-shadow-[0_0_4px_black]"
+                    : result.status === "NOT_FOUND"
+                    ? "text-orange-500 drop-shadow-[0_0_4px_black]"
+                    : "text-red-500 drop-shadow-[0_0_4px_black]"
+                }`}
+              >
+                <div className="flex items-center justify-center">
+                  <span className="truncate">{result.name || "Unknown"}</span>
+                  {/* <span className="ml-2 text-xs opacity-75">
                       {result.status}
-                    </span>
-                  </div>
+                    </span> */}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
+          {/* )} */}
         </div>
       </div>
     </div>
