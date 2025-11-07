@@ -29,33 +29,29 @@ export default function OpenCVCameraComponent() {
     url: string;
     action: "mengambil" | "mengembalikan";
   } => {
-    const path = window.location.pathname;
+    // Build WS base from current origin to support HTTPS (wss)
+    const isBrowser = typeof window !== "undefined";
+    const path = isBrowser ? window.location.pathname : "/";
+    const scheme = isBrowser && window.location.protocol === "https:" ? "wss" : "ws";
+    const host = isBrowser ? window.location.host : "localhost";
+    const base = `${scheme}://${host}`;
 
     if (path.startsWith("/return-")) {
       if (path === "/return-phone") {
-        return {
-          url: "ws://localhost:8000/ws/log-hp",
-          action: "mengembalikan",
-        };
+        return { url: `${base}/ws/log-hp`, action: "mengembalikan" };
       } else if (path === "/return-laptop") {
-        return {
-          url: "ws://localhost:8000/ws/log-laptop",
-          action: "mengembalikan",
-        };
+        return { url: `${base}/ws/log-laptop`, action: "mengembalikan" };
       }
     } else if (path.startsWith("/take-")) {
       if (path === "/take-phone") {
-        return { url: "ws://localhost:8000/ws/log-hp", action: "mengambil" };
+        return { url: `${base}/ws/log-hp`, action: "mengambil" };
       } else if (path === "/take-laptop") {
-        return {
-          url: "ws://localhost:8000/ws/log-laptop",
-          action: "mengambil",
-        };
+        return { url: `${base}/ws/log-laptop`, action: "mengambil" };
       }
     }
 
-    // fallback
-    return { url: "ws://localhost:8000/ws/default", action: "mengambil" };
+    // fallback ke HP
+    return { url: `${base}/ws/log-hp`, action: "mengambil" };
   };
 
   // 🔹 Kamera langsung nyala begitu komponen muncul

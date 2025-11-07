@@ -42,9 +42,9 @@ export default function LogbookPage() {
     const fetchData = async () => {
       try {
         const [laptopRes, hpRes, usersRes] = await Promise.all([
-          axios.get("http://127.0.0.1:8000/users/all/log-laptop"),
-          axios.get("http://127.0.0.1:8000/users/all/log-hp"),
-          axios.get("http://127.0.0.1:8000/users/all/users"),
+          axios.get("/api/users/all/log-laptop"),
+          axios.get("/api/users/all/log-hp"),
+          axios.get("/api/users/all/users"),
         ]);
 
         const usersData = usersRes.data.users || usersRes.data;

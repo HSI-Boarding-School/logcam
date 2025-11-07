@@ -16,7 +16,7 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/users/all/users");
+        const res = await axios.get("/api/users/all/users");
         setData(res.data.users);
       } catch (err) {
         console.error("❌ Error fetch users:", err);
