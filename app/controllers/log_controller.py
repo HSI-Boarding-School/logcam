@@ -1,4 +1,3 @@
-# app/controllers/log_books_controller.py
 from fastapi import WebSocket, WebSocketDisconnect
 from app.database import SessionLocal
 from app.models import Student, LogBook
@@ -24,7 +23,7 @@ async def process_log(websocket: WebSocket, tipe: str):
 
     try:
         while True:
-            
+
             data = await websocket.receive_text()
             payload = json.loads(data)
             frame_b64 = payload.get("frame")

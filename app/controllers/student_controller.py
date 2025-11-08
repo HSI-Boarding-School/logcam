@@ -11,12 +11,10 @@ class StudentController:
     async def register_user(name: str, file: UploadFile, tipe_class: str, branch_id: int):
         db = SessionLocal()
         try:
-            # 🔹 Validasi branch
             branch = db.query(Branch).filter(Branch.id == branch_id).first()
             if not branch:
                 raise HTTPException(status_code=404, detail="Branch not found")
 
-            # 🔹 Proses gambar
             img_bytes = await file.read()
             np_arr = np.frombuffer(img_bytes, np.uint8)
             img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -27,7 +25,6 @@ class StudentController:
             if not encoding:
                 return {"error": "Wajah tidak terdeteksi"}
 
-            # 🔹 Simpan user baru
             student = Student(
                 name=name,
                 face_embedding=encoding,
