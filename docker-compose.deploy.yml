@@ -9,3 +9,5 @@ services:
     image: ${FRONTEND_IMAGE}
     build: ~
 
+  nginx:
+    image: ${NGINX_IMAGE}

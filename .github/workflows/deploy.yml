@@ -54,8 +54,24 @@ jobs:
             ${{ env.IMAGE_FRONTEND }}:${{ github.sha }}
             ${{ env.IMAGE_FRONTEND }}:latest
           build-args: |
-            NEXT_PUBLIC_API_BASE=https://logcam.naflatech.com/api
-            NEXT_PUBLIC_WS_BASE=wss://logcam.naflatech.com
+            VITE_API_BASE=https://logcam.naflatech.com/api
+            VITE_WS_BASE=wss://logcam.naflatech.com
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push nginx web image (static frontend)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./nginx/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ github.repository }}/web:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/web:latest
+          build-args: |
+            VITE_API_BASE=https://logcam.naflatech.com/api
+            VITE_WS_BASE=wss://logcam.naflatech.com
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -94,6 +110,7 @@ jobs:
 
             export BACKEND_IMAGE=ghcr.io/${{ github.repository }}/backend:${GITHUB_SHA}
             export FRONTEND_IMAGE=ghcr.io/${{ github.repository }}/frontend:${GITHUB_SHA}
+            export NGINX_IMAGE=ghcr.io/${{ github.repository }}/web:${GITHUB_SHA}
 
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
@@ -102,4 +119,3 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml up -d
 
             # Run DB migrations/init if needed (not applicable here since SQLAlchemy creates tables on start)
-

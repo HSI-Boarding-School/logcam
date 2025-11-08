@@ -11,9 +11,8 @@ services:
       - ./nginx/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-
+  
+  # Disable the separate frontend container in production; only used in dev profile
   frontend:
-    build:
-      args:
-        NEXT_PUBLIC_API_BASE: https://logcam.naflatech.com/api
-        NEXT_PUBLIC_WS_BASE: wss://logcam.naflatech.com
+    profiles:
+      - dev

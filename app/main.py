@@ -5,11 +5,13 @@ from app.routes import log_routes, user_routes
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-app = FastAPI()
+# Set docs and OpenAPI under /api prefix so they render correctly behind Nginx path-based proxy
+app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 load_dotenv()
 
-origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+# Parse allowed origins, ignore empty entries
+origins = [o for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o]
 
 app.add_middleware(
     CORSMiddleware,

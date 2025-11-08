@@ -1,7 +1,7 @@
 Logcam Deployment Guide (Ubuntu 22.04 + Docker)
 
 Overview
-- Stack: FastAPI backend (Uvicorn), Next.js frontend, MySQL 8, Nginx reverse proxy, Let’s Encrypt (webroot).
+- Stack: FastAPI backend (Uvicorn), Vite/React frontend (Bun), MySQL 8, Nginx reverse proxy, Let’s Encrypt (webroot).
 - Domain: logcam.naflatech.com
 - Compose files: docker-compose.yml (base), docker-compose.prod.yml (SSL override), docker-compose.dev.yml (local dev)
 
@@ -24,8 +24,8 @@ Local Development (macOS/Linux)
 - Requirements: Docker Desktop (macOS) atau Docker Engine + Compose (Linux).
 - Jalankan stack dev (hot reload frontend/backend):
   - docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-  - Akses: http://localhost (via Nginx) atau langsung http://localhost:3000 (Next.js dev)
-  - Backend live reload: http://localhost:8000/docs (direct) atau /api/docs via Nginx
+  - Akses: http://localhost (via Nginx) atau langsung http://localhost:8080 (Vite dev)
+  - Backend live reload: http://localhost:8000/docs (direct) atau http://localhost/api/docs via Nginx
 - Catatan macOS (Apple Silicon): build dlib pertama kali agak lama; pastikan Docker Desktop memberi cukup CPU/RAM.
 - Jika host Anda sudah ada MySQL di 3306, hapus mapping port 3306 di docker-compose.dev.yml service db.
  - Perubahan file .env.* di frontend memerlukan restart dev server:
@@ -47,7 +47,7 @@ macOS Apple Silicon (M1/M2) – Setup Lengkap Docker + Project
    - docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 6) Akses aplikasi:
    - Frontend via Nginx: http://localhost
-   - Frontend dev langsung: http://localhost:3000
+   - Frontend dev langsung: http://localhost:8080
    - Backend dev langsung (docs): http://localhost:8000/docs
    - Catatan: getUserMedia (kamera) boleh di http://localhost tanpa HTTPS.
 7) Melihat log saat pengembangan:
@@ -68,13 +68,13 @@ Troubleshooting khusus Mac M1/M2
   - Default image (python:3.10-slim, mysql:8, node:20) sudah multi-arch dan berjalan di arm64.
   - Hindari memaksa linux/amd64 di Mac M1 karena emulasi QEMU akan membuat build makin lambat.
 - Port 80 konflik:
-  - Jika ada service lain di port 80, hentikan service itu atau akses langsung http://localhost:3000 (frontend) & http://localhost:8000 (backend).
+  - Jika ada service lain di port 80, hentikan service itu atau akses langsung http://localhost:8080 (frontend dev) & http://localhost:8000 (backend).
 
 First Boot (HTTP only)
 1) Build and start containers (this brings up Nginx on :80):
    - docker compose up -d --build
 2) Verify HTTP serving:
-   - Open http://logcam.naflatech.com (Next.js should render)
+   - Open http://logcam.naflatech.com (may 404 until CI-built web image is deployed)
 
 Issue Let’s Encrypt Certificate (Webroot)
 1) Run certbot container to obtain certificate:
@@ -88,17 +88,18 @@ Switch to HTTPS (Production)
   - https://logcam.naflatech.com
   - API: https://logcam.naflatech.com/api/users/all/users
   - WS:  wss://logcam.naflatech.com/ws/log-laptop
+  - FastAPI docs: https://logcam.naflatech.com/api/docs
 
 What’s Already Configured
 - Nginx HTTP (nginx/nginx.conf):
   - Serves ACME challenge via /var/www/certbot
-  - Proxies / → frontend:3000, /api → backend:8000 (rewritten), /ws → backend:8000 (WebSocket upgrade)
+  - Proxies / → frontend:8080 (dev), /api → backend:8000 (no rewrite), /ws → backend:8000 (WebSocket upgrade)
   - client_max_body_size 20m; and WS timeouts are set
 - Nginx HTTPS (nginx/nginx-ssl.conf):
-  - Same proxy rules; TLS on 443 with Let’s Encrypt paths for logcam.naflatech.com
+  - Serves static frontend build from /usr/share/nginx/html; proxies /api and /ws; TLS on 443 with Let’s Encrypt paths for logcam.naflatech.com
   - HSTS and modern TLS ciphers enabled
 - Docker Compose (docker-compose.yml):
-  - Services: db (MySQL 8), backend (FastAPI), frontend (Next.js), nginx (reverse proxy), certbot (utility)
+  - Services: db (MySQL 8), backend (FastAPI), frontend (Vite/Bun, dev), nginx (reverse proxy), certbot (utility)
   - Ports: 80, 443 exposed by nginx
   - Volumes: db_data (MySQL data), certbot/conf (certs), certbot/www (webroot)
 - Docker Compose Prod Override (docker-compose.prod.yml):
@@ -110,12 +111,13 @@ Environment & Secrets
 - MySQL credentials are set for demo; change MYSQL_ROOT_PASSWORD and MYSQL_PASSWORD.
 
 Frontend Refactor Notes
-- HTTP calls read base from env: NEXT_PUBLIC_API_BASE (default: /api). Examples:
+- HTTP calls read base from env: VITE_API_BASE (default: /api). Examples:
   - Dev direct to backend: http://localhost:8000
   - Behind Nginx: /api
-- WebSocket base reads from env: NEXT_PUBLIC_WS_BASE (default: derive from window origin)
+- WebSocket base reads from env: VITE_WS_BASE (default: derive from window origin)
   - Dev direct to backend: ws://localhost:8000
   - Behind Nginx: leave empty to auto use wss://<host>
+  - FastAPI docs now available at /api/docs (configured in app.main)
 
 Environment files (frontend)
 - Files provided:
@@ -125,8 +127,8 @@ Environment files (frontend)
 - Local dev (inside container, hot reload):
   - cp client/.env.development.local.example client/.env.development.local
   - Values:
-    - NEXT_PUBLIC_API_BASE=http://localhost:8000
-    - NEXT_PUBLIC_WS_BASE=ws://localhost:8000
+    - VITE_API_BASE=http://localhost:8000
+    - VITE_WS_BASE=ws://localhost:8000
 - Production build (Docker image):
   - We pass env at build-time via Docker build args (see docker-compose.prod.yml).
   - Alternatively, you can create client/.env.production.local before build, but note client/.dockerignore ignores .env* by default; using build args is preferred.
@@ -164,7 +166,7 @@ CI Build Cache (faster builds)
 - Files:
   - .github/workflows/docker-build.yml → uses buildx with cache-from/to type=gha
   - Dockerfile.backend → pip cache: --mount=type=cache,target=/root/.cache/pip
-  - client/Dockerfile → npm cache: --mount=type=cache,target=/root/.npm and Next cache: /app/.next/cache
+  - client/Dockerfile → Bun cache: --mount=type=cache,target=/root/.bun and Vite cache during build
 - Local BuildKit usage:
   - export DOCKER_BUILDKIT=1
   - docker buildx create --use || true
@@ -192,11 +194,11 @@ Recommended: image-based deploy via GHCR (no build on server).
 
 3) Workflow files
 - Build cache: .github/workflows/docker-build.yml
-- Build & deploy: .github/workflows/deploy.yml
+- Build & deploy: .github/workflows/deploy.yml (builds backend, frontend, and web images)
 
 4) How it works
-- Build & push multi-arch images to GHCR with tags: latest and commit SHA.
-- SSH to server, set BACKEND_IMAGE and FRONTEND_IMAGE env, and run:
+- Build & push multi-arch images to GHCR with tags: latest and commit SHA (backend, frontend, and web images).
+- SSH to server, set BACKEND_IMAGE, FRONTEND_IMAGE, and NGINX_IMAGE env, and run:
   - docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml up -d
 - The override file docker-compose.deploy.yml injects images and disables local builds on server.
 
