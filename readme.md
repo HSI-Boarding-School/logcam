@@ -41,19 +41,11 @@ Pastikan sudah menginstall:
 3. **Install dependencies**
    ```
    pip install -r requirements.txt
+   pip install psycopg2-binary
+   pip install "python-jose[cryptography]" "passlib[bcrypt]" (macos)
    ```
 4. **Konfigurasi .env**
-   ```
-   DB_USER=root
-   DB_PASSWORD=password
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_NAME=face_recog_db
-   ```
-5. **Buat database**
-   ```
-   CREATE DATABASE face_recog_db;
-   ```
+
 
 ## ▶️ Menjalankan Project
 
