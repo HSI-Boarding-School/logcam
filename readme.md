@@ -41,6 +41,8 @@ Pastikan sudah menginstall:
 3. **Install dependencies**
    ```
    pip install -r requirements.txt
+   pip install psycopg2-binary
+   pip install "python-jose[cryptography]" "passlib[bcrypt]" (macos)
    ```
 4. **Konfigurasi .env**
    ```

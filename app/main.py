@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from app.database import init_db
-from app.routes import log_routes, user_routes
+from app.routes import log_routes, student_routes, branch_routes, user_routes
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -21,5 +21,7 @@ app.add_middleware(
 
 init_db()
 
-app.include_router(user_routes.router, prefix="/users", tags=["Users"])
-app.include_router(log_routes.router, prefix="/ws", tags=["WebSockets"])
+app.include_router(student_routes.router)
+app.include_router(branch_routes.router)
+app.include_router(log_routes.router)
+app.include_router(user_routes.router)
