@@ -1,0 +1,43 @@
+name: Build Docker images (cached)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Backend image
+      - name: Build backend (cache)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: false
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Frontend image
+      - name: Build frontend (cache)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          push: false
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_API_BASE=https://logcam.naflatech.com/api
+            NEXT_PUBLIC_WS_BASE=wss://logcam.naflatech.com
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+

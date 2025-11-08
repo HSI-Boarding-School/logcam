@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  db:
+    # Expose MySQL to host for local admin tools (optional)
+    ports:
+      - "3306:3306"
+
+  backend:
+    # Live-reload for local development
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      # Allow localhost origins for local browser (include ports)
+      ALLOWED_ORIGINS: http://localhost,http://127.0.0.1,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://127.0.0.1:8080
+    volumes:
+      - ./app:/app/app
+      - ./requirements.txt:/app/requirements.txt:ro
+    ports:
+      - "8000:8000"
+
+  frontend:
+    # Hot reload Vite with Bun
+    image: oven/bun:1
+    working_dir: /app
+    command: sh -lc "bun install --frozen-lockfile || bun install; bun run dev"
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "1"
+      VITE_API_BASE: http://localhost:8000
+      VITE_WS_BASE: ws://localhost:8000
+    volumes:
+      - ./client:/app
+    ports:
+      - "8080:8080"
+
+volumes:
