@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE } from "@/lib/config";
 import { useEffect, useState } from "react";
 
 interface UsersList {
@@ -16,7 +17,7 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/api/users/all/users");
+        const res = await axios.get(`${API_BASE}/users/all/users`);
         setData(res.data.users);
       } catch (err) {
         console.error("❌ Error fetch users:", err);

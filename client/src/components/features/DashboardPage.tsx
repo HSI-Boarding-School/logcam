@@ -1,5 +1,6 @@
 import { Activity, Laptop, Smartphone, Users } from "lucide-react";
 import axios from "axios";
+import { API_BASE } from "@/lib/config";
 import { useEffect, useState } from "react";
 
 export interface Logbook {
@@ -18,7 +19,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await axios.get("/api/users/all/users");
+        const res = await axios.get(`${API_BASE}/users/all/users`);
         const countUser = res.data["users"];
         setTotalUsers(countUser.length);
       } catch (err) {
@@ -51,8 +52,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchLogs = async () => {
       const [laptopRes, hpRes] = await Promise.all([
-        axios.get("/api/users/all/log-laptop"),
-        axios.get("/api/users/all/log-hp"),
+        axios.get(`${API_BASE}/users/all/log-laptop`),
+        axios.get(`${API_BASE}/users/all/log-hp`),
       ]);
 
       const laptopLogs = laptopRes.data["log-laptop"];

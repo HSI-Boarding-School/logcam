@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
+import { resolveWsBase } from "@/lib/config";
 import FloatingButton from "../ui/FloatingButton";
 import BackButton from "../ui/BackButton";
 
@@ -29,12 +30,10 @@ export default function OpenCVCameraComponent() {
     url: string;
     action: "mengambil" | "mengembalikan";
   } => {
-    // Build WS base from current origin to support HTTPS (wss)
+    // Resolve WS base from env or current origin
     const isBrowser = typeof window !== "undefined";
     const path = isBrowser ? window.location.pathname : "/";
-    const scheme = isBrowser && window.location.protocol === "https:" ? "wss" : "ws";
-    const host = isBrowser ? window.location.host : "localhost";
-    const base = `${scheme}://${host}`;
+    const base = resolveWsBase();
 
     if (path.startsWith("/return-")) {
       if (path === "/return-phone") {

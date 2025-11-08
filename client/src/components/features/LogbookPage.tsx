@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE } from "@/lib/config";
 import { Laptop, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -42,9 +43,9 @@ export default function LogbookPage() {
     const fetchData = async () => {
       try {
         const [laptopRes, hpRes, usersRes] = await Promise.all([
-          axios.get("/api/users/all/log-laptop"),
-          axios.get("/api/users/all/log-hp"),
-          axios.get("/api/users/all/users"),
+          axios.get(`${API_BASE}/users/all/log-laptop`),
+          axios.get(`${API_BASE}/users/all/log-hp`),
+          axios.get(`${API_BASE}/users/all/users`),
         ]);
 
         const usersData = usersRes.data.users || usersRes.data;
