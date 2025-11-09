@@ -20,6 +20,9 @@ export default function OpenCVCameraComponent() {
   const wsRef = useRef<WebSocket | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manuallyStoppedRef = useRef(false);
 
   const [isConnected, setIsConnected] = useState(false);
   const [results, setResults] = useState<DetectionResult[]>([]);
@@ -49,11 +52,11 @@ export default function OpenCVCameraComponent() {
       }
     }
 
-    // fallback ke HP
+    // fallback to HP
     return { url: `${base}/ws/log-hp`, action: "mengambil" };
   };
 
-  // 🔹 Kamera langsung nyala begitu komponen muncul
+  // Start the camera automatically when the component mounts
   useEffect(() => {
     const startCamera = async () => {
       try {
@@ -65,9 +68,9 @@ export default function OpenCVCameraComponent() {
         }
         streamRef.current = stream;
       } catch (err) {
-        console.error("❌ Gagal akses kamera:", err);
+        console.error("❌ Failed to access camera:", err);
         setError(
-          "Tidak bisa mengakses kamera. Pastikan izin kamera sudah diberikan."
+          "Unable to access the camera. Please grant camera permission."
         );
       }
     };
@@ -75,7 +78,7 @@ export default function OpenCVCameraComponent() {
     startCamera();
 
     return () => {
-      // Cleanup kamera
+      // Clean up camera stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -83,7 +86,7 @@ export default function OpenCVCameraComponent() {
     };
   }, []);
 
-  // 🔹 Kirim frame ke server
+  // Periodically capture a frame and send it to the server
   const sendFrame = useCallback((action: "mengambil" | "mengembalikan") => {
     if (
       !videoRef.current ||
@@ -97,23 +100,43 @@ export default function OpenCVCameraComponent() {
     if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
     try {
+      // Downscale frames to reduce bandwidth/CPU
+      const targetWidth = Math.min(640, video.videoWidth);
+      const targetHeight = Math.round(
+        (video.videoHeight / video.videoWidth) * targetWidth
+      );
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
       const ctx = canvas.getContext("2d");
 
       if (!ctx) return;
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const frameData = canvas.toDataURL("image/jpeg");
+      // Lower JPEG quality to further reduce payload size
+      const frameData = canvas.toDataURL("image/jpeg", 0.6);
 
       wsRef.current.send(JSON.stringify({ frame: frameData, action: action }));
     } catch (err) {
-      console.error("Error saat mengirim frame:", err);
+      console.error("Error while sending frame:", err);
     }
   }, []);
 
-  // 🔹 Connect WebSocket
+  // Reconnect handling with exponential backoff
+  const scheduleReconnect = () => {
+    const attempt = reconnectAttemptsRef.current + 1;
+    reconnectAttemptsRef.current = attempt;
+    const delay = Math.min(30000, 1000 * Math.pow(2, attempt - 1)); // 1s,2s,4s.. up to 30s
+    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (!manuallyStoppedRef.current) startWebSocket();
+    }, delay);
+    console.log(
+      `⏳ Reconnecting WebSocket in ${Math.round(delay / 1000)}s (attempt ${attempt})`
+    );
+  };
+
+  // Connect WebSocket
   const startWebSocket = useCallback(() => {
     try {
       const { url, action } = getWsConfig();
@@ -123,14 +146,17 @@ export default function OpenCVCameraComponent() {
         console.log("✅ Connected to WebSocket server");
         setIsConnected(true);
         setError(null);
+        // Reset reconnect state
+        reconnectAttemptsRef.current = 0;
+        manuallyStoppedRef.current = false;
 
-        // Mulai timer
+        // Start elapsed time counter
         setElapsedTime(0);
         timerRef.current = setInterval(() => {
           setElapsedTime((prev) => prev + 1);
         }, 1000);
 
-        // Mulai kirim frame
+        // Start sending frames at an interval
         intervalRef.current = setInterval(() => {
           sendFrame(action);
         }, 2000);
@@ -139,7 +165,7 @@ export default function OpenCVCameraComponent() {
       wsRef.current.onmessage = (event) => {
         try {
           const data: WebSocketResponse = JSON.parse(event.data);
-          console.log("📥 Response dari server:", data);
+          console.log("📥 Response from server:", data);
           setResults(data.results || []);
         } catch (err) {
           console.error("Error parsing WebSocket message:", err);
@@ -148,13 +174,33 @@ export default function OpenCVCameraComponent() {
 
       wsRef.current.onclose = () => {
         console.log("🔌 WebSocket connection closed");
+        // Stop timers when WS closes
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         setIsConnected(false);
+        if (!manuallyStoppedRef.current) scheduleReconnect();
       };
 
       wsRef.current.onerror = (error) => {
         console.error("❌ WebSocket error:", error);
         setError("WebSocket connection error");
+        // Stop timers on error as well
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         setIsConnected(false);
+        if (!manuallyStoppedRef.current) scheduleReconnect();
       };
     } catch (err) {
       console.error("Error creating WebSocket:", err);
@@ -162,8 +208,9 @@ export default function OpenCVCameraComponent() {
     }
   }, [sendFrame]);
 
-  // 🔹 Stop WebSocket
+  // Stop WebSocket and timers
   const stopWebSocket = useCallback(() => {
+    manuallyStoppedRef.current = true;
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -184,7 +231,30 @@ export default function OpenCVCameraComponent() {
     setElapsedTime(0);
   }, []);
 
-  // 🔹 Format waktu dari detik ke MM:SS
+  // Ensure WS is closed when component unmounts
+  useEffect(() => {
+    return () => {
+      manuallyStoppedRef.current = true;
+      if (wsRef.current) {
+        try { wsRef.current.close(); } catch {}
+        wsRef.current = null;
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  // Format time to MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -195,7 +265,7 @@ export default function OpenCVCameraComponent() {
 
   return (
     <div className="relative w-screen h-screen flex flex-col items-center gap-4">
-      {/* Kamera selalu ON */}
+      {/* Camera is always ON */}
       <video
         ref={videoRef}
         autoPlay
@@ -205,12 +275,12 @@ export default function OpenCVCameraComponent() {
 
       <FloatingButton />
 
-      {/* Timer hanya jalan kalau WS aktif */}
+      {/* Timer runs only while WS is active */}
       <div className="px-5 py-2 absolute right-4 top-8 bg-purple-500 text-white rounded-lg text-sm font-medium">
         ⏱️ Timer: {formatTime(elapsedTime)}
       </div>
 
-      {/* Tombol khusus untuk WS */}
+      {/* WebSocket controls */}
       <div className="absolute right-4 top-20 flex gap-4">
         <button
           onClick={startWebSocket}
@@ -228,12 +298,12 @@ export default function OpenCVCameraComponent() {
         </button>
       </div>
 
-      {/* Status Indicators */}
+      {/* Navigation */}
       <div className="absolute top-4 left-4 flex flex-col gap-2">
         <BackButton />
       </div>
 
-      {/* Detection Results */}
+      {/* Detection results */}
       <div className="absolute bottom-12 w-full text-center">
         <div className="p-4 w-full mt-24 bg-transparent mx-auto max-w-7xl py-18 rounded-lg">
           {/* <h3 className="font-bold text-4xl text-gray-800 mb-3 flex items-center justify-center gap-2">
@@ -264,7 +334,7 @@ export default function OpenCVCameraComponent() {
                 }`}
               >
                 <div className="flex items-center justify-center">
-                  <span className="truncate">{result.name || "Unknown"}</span>
+                  <span className="truncate">{result.name || "Wajah Tidak Dikenali"}</span>
                   {/* <span className="ml-2 text-xs opacity-75">
                       {result.status}
                     </span> */}

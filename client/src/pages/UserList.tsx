@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE } from "@/lib/config";
 import {
   Table,
   TableBody,
@@ -30,7 +31,7 @@ export default function UserList() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/users/all/users");
+        const res = await axios.get(`${API_BASE}/users/all`);
         setData(res.data.users);
       } catch (err) {
         console.error("❌ Failed to fetch users:", err);

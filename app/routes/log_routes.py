@@ -1,4 +1,4 @@
-# app/routers/log_books.py
+# WebSocket routes for log events
 from fastapi import APIRouter, WebSocket
 from app.controllers.log_controller import process_log
 

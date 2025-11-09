@@ -1,10 +1,12 @@
+## compose (moved under infra/compose)
 version: "3.9"
+name: logcam
 
 services:
   db:
-    # Expose MySQL to host for local admin tools (optional)
+    # Expose PostgreSQL to host for local admin tools (optional)
     ports:
-      - "3306:3306"
+      - "5432:5432"
 
   backend:
     # Live-reload for local development
@@ -13,8 +15,8 @@ services:
       # Allow localhost origins for local browser (include ports)
       ALLOWED_ORIGINS: http://localhost,http://127.0.0.1,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://127.0.0.1:8080
     volumes:
-      - ./app:/app/app
-      - ./requirements.txt:/app/requirements.txt:ro
+      - ../../app:/app/app
+      - ../../requirements.txt:/app/requirements.txt:ro
     ports:
       - "8000:8000"
 
@@ -26,10 +28,10 @@ services:
     environment:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "1"
-      VITE_API_BASE: http://localhost:8000
-      VITE_WS_BASE: ws://localhost:8000
+    env_file:
+      - ../../client/.env.development.local
     volumes:
-      - ./client:/app
+      - ../../client:/app
     ports:
       - "8080:8080"
 

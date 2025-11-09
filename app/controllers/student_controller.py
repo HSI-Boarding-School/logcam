@@ -20,10 +20,10 @@ class StudentController:
             img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-            # 🔹 Encode wajah
+            # Encode face embedding
             encoding = get_face_encoding(rgb)
             if not encoding:
-                return {"error": "Wajah tidak terdeteksi"}
+                return {"error": "Face not detected"}
 
             student = Student(
                 name=name,

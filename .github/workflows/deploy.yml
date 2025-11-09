@@ -34,14 +34,18 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.backend
+          file: ./infra/docker/backend.Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.IMAGE_BACKEND }}:${{ github.sha }}
             ${{ env.IMAGE_BACKEND }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.IMAGE_BACKEND }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.IMAGE_BACKEND }}:buildcache,mode=max
 
       - name: Build & push frontend image
         uses: docker/build-push-action@v5
@@ -56,14 +60,18 @@ jobs:
           build-args: |
             VITE_API_BASE=https://logcam.naflatech.com/api
             VITE_WS_BASE=wss://logcam.naflatech.com
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.IMAGE_FRONTEND }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.IMAGE_FRONTEND }}:buildcache,mode=max
 
       - name: Build & push nginx web image (static frontend)
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./nginx/Dockerfile
+          file: ./infra/docker/web.Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
@@ -72,8 +80,12 @@ jobs:
           build-args: |
             VITE_API_BASE=https://logcam.naflatech.com/api
             VITE_WS_BASE=wss://logcam.naflatech.com
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=ghcr.io/${{ github.repository }}/web:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=ghcr.io/${{ github.repository }}/web:buildcache,mode=max
 
   deploy:
     needs: build-and-push
@@ -115,7 +127,7 @@ jobs:
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
             # Pull images and run with compose (base + prod + deploy override)
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml pull || true
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml up -d
+            docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.prod.yml -f infra/compose/docker-compose.deploy.yml pull || true
+            docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.prod.yml -f infra/compose/docker-compose.deploy.yml up -d
 
             # Run DB migrations/init if needed (not applicable here since SQLAlchemy creates tables on start)
