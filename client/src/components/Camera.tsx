@@ -3,6 +3,8 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import FloatingButton from "./FloatingButton";
 import BackButton from "./BackButton";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSaveFetection } from "@/hooks/useSaveDetection";
 
 interface DetectionResult {
   name?: string;
@@ -10,10 +12,15 @@ interface DetectionResult {
 }
 
 interface WebSocketResponse {
+  type?: "frame" | "result";
+  image?: string;
   results: DetectionResult[];
 }
 
 export default function OpenCVCameraComponent() {
+  const queryClient = useQueryClient();
+  const { mutate: saveDetection } = useSaveFetection();
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -23,6 +30,7 @@ export default function OpenCVCameraComponent() {
   const [isConnected, setIsConnected] = useState(false);
   const [results, setResults] = useState<DetectionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [frame, setFrame] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const getWsConfig = (): {
@@ -144,10 +152,24 @@ export default function OpenCVCameraComponent() {
       wsRef.current.onmessage = (event) => {
         try {
           const data: WebSocketResponse = JSON.parse(event.data);
-          console.log("📥 Response dari server:", data);
-          setResults(data.results || []);
-        } catch (err) {
-          console.error("Error parsing WebSocket message:", err);
+          console.log("📩 Data dari server:", data)
+
+          if (data.type === "frame" && data.image) {
+            console.log("🖼️ Frame diterima!");
+            setFrame(`data:image/jpeg;base64,${data.image}`);
+          }
+
+          if (data.results) {
+            setResults(data.results);
+
+            // 🟢 Save to TanStack cache
+            queryClient.setQueryData(["latest-detection"], data.results);
+
+            // 🟢 Send to backend using mutation
+            saveDetection(data.results);
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
         }
       };
 
@@ -237,6 +259,14 @@ export default function OpenCVCameraComponent() {
       <div className="absolute top-4 left-4 flex flex-col gap-2">
         <BackButton />
       </div>
+
+      {frame && (
+        <img
+          src={frame}
+          alt="Frame dari server"
+          className="absolute top-0 left-0 w-32 h-32 border-2 border-white"
+        />
+      )}
 
       {/* Detection Results */}
       <div className="absolute bottom-12 w-full text-center">

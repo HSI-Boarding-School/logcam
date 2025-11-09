@@ -74,10 +74,10 @@ export default function Attendance() {
           <div className="absolute top-0 right-0 w-28 h-28 sm:w-40 sm:h-40 bg-gradient-to-br from-primary/20 to-transparent rounded-bl-[120px]" />
           <CardHeader className="relative p-4 sm:p-6">
             <CardTitle className="text-xl sm:text-2xl font-bold">
-              Borrow {deviceType === "laptop" ? "Laptop" : "Phone"}
+              Take {deviceType === "laptop" ? "Laptop" : "Phone"}
             </CardTitle>
             <CardDescription className="text-sm sm:text-base">
-              Position your face in the camera frame to start borrowing
+              Position your face in the camera frame to start taking
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6 relative p-4 sm:p-6">
@@ -87,7 +87,7 @@ export default function Attendance() {
                   <Camera className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground font-secondary px-4">
-                  Camera feed will appear here
+                  This will open the camera page
                 </p>
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function Attendance() {
                   <Camera className="h-8 w-8 sm:h-12 sm:w-12 text-teal-600" />
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground font-secondary px-4">
-                  Camera feed will appear here
+                  This will open the camera page
                 </p>
               </div>
             </div>

@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -15,6 +16,8 @@ import ReturnLaptop from "./pages/camera/return-laptop";
 import TakePhone from "./pages/camera/take-phone";
 import TakeLaptop from "./pages/camera/take-laptop";
 import ReturnPhone from "./pages/camera/return-phone";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +26,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ReactQueryDevtools />
       <BrowserRouter>
         <Routes>
           {/* ✅ ROUTE DENGAN SIDEBAR & TOPBAR */}
@@ -54,6 +58,10 @@ const App = () => (
           <Route path="/return-laptop" element={<ReturnLaptop />} />
           <Route path="/take-phone" element={<TakePhone />} />
           <Route path="/return-phone" element={<ReturnPhone />} />
+
+          {/* AUTH */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
