@@ -4,18 +4,17 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# System deps needed for dlib, OpenCV, and MySQL clients
+# System deps needed for dlib, OpenCV
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        build-essential \
        cmake \
        libgl1 \
        libglib2.0-0 \
+       libstdc++6 \
        libopenblas-dev \
        gfortran \
-       libmariadb-dev \
        pkg-config \
-       default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

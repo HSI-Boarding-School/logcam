@@ -21,7 +21,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.backend
+          file: ./infra/docker/backend.Dockerfile
           push: false
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
@@ -36,8 +36,18 @@ jobs:
           push: false
           platforms: linux/amd64,linux/arm64
           build-args: |
-            NEXT_PUBLIC_API_BASE=https://logcam.naflatech.com/api
-            NEXT_PUBLIC_WS_BASE=wss://logcam.naflatech.com
+            VITE_API_BASE=https://logcam.naflatech.com/api
+            VITE_WS_BASE=wss://logcam.naflatech.com
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Web (Nginx + static dist) image
+      - name: Build web (cache)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./infra/docker/web.Dockerfile
+          push: false
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

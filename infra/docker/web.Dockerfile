@@ -8,6 +8,7 @@ RUN --mount=type=cache,target=/root/.bun bun install --frozen-lockfile
 # Build frontend
 COPY client/ .
 RUN --mount=type=cache,target=/app/node_modules/.cache bun run build
+RUN rm -f /app/dist/ws-test.html || true
 
 FROM nginx:stable-alpine
 
@@ -18,4 +19,3 @@ COPY nginx/nginx-ssl.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80 443
-

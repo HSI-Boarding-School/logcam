@@ -46,4 +46,3 @@ Steps
 Notes
 - Camera (getUserMedia) requires HTTPS on non-localhost origins; enabling HTTPS on the OrbStack Dev Domain resolves this.
 - If you prefer multiple domains (e.g., api.logcam.local), you can add more Dev Domains in OrbStack and switch frontend env accordingly.
-

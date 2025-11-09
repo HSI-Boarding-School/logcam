@@ -1,4 +1,6 @@
+## compose (moved under infra/compose)
 version: "3.9"
+name: logcam
 
 services:
   backend:

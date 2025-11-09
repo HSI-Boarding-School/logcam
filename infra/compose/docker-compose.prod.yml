@@ -1,4 +1,6 @@
+## compose (moved under infra/compose)
 version: "3.9"
+name: logcam
 
 services:
   backend:
@@ -8,9 +10,9 @@ services:
 
   nginx:
     volumes:
-      - ./nginx/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ../../infra/nginx/prod-ssl.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../../certbot/conf:/etc/letsencrypt
+      - ../../certbot/www:/var/www/certbot
   
   # Disable the separate frontend container in production; only used in dev profile
   frontend:
