@@ -13,7 +13,7 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 2880 # 2 hari expired token nya
+ACCESS_TOKEN_EXPIRE_MINUTES = 2880  # token expires in 2 days
 
 
 class LoginRequest(BaseModel):
@@ -23,7 +23,7 @@ class LoginRequest(BaseModel):
 
 def verify_password(plain_password: str, hashed_password: str):
     try:
-        # pastikan hash dalam bentuk bytes
+        # ensure the hash is in bytes
         hashed_bytes = hashed_password.encode("utf-8")
         password_bytes = plain_password.encode("utf-8")
 
@@ -32,7 +32,7 @@ def verify_password(plain_password: str, hashed_password: str):
     except Exception:
         raise HTTPException(
             status_code=400,
-            detail="Format password hash tidak valid atau tidak bisa diverifikasi."
+            detail="Invalid password hash format or not verifiable."
         )
 
 
@@ -50,17 +50,17 @@ def login_user(request: LoginRequest):
         user = db.query(User).filter(User.email == request.email).first()
 
         if not user:
-            raise HTTPException(status_code=401, detail="Email tidak terdaftar")
+            raise HTTPException(status_code=401, detail="Email is not registered")
 
-        # Verifikasi password menggunakan bcrypt asli
+        # Verify password using bcrypt
         if not verify_password(request.password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Password salah")
+            raise HTTPException(status_code=401, detail="Incorrect password")
 
         # Generate JWT token
         access_token = create_access_token({"sub": str(user.id)})
 
         return {
-            "message": "Login berhasil",
+            "message": "Login success",
             "access_token": access_token,
             "token_type": "bearer",
             "user": {
