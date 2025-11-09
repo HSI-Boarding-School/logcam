@@ -29,6 +29,7 @@ export default function OpenCVCameraComponent() {
   const [results, setResults] = useState<DetectionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showBoundingBoxes, setShowBoundingBoxes] = useState(false);
 
   // FACE-API model loading
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -82,6 +83,13 @@ export default function OpenCVCameraComponent() {
       }
       if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
       if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+      // If bounding boxes are disabled, clear the canvas and skip heavy detection
+      if (!showBoundingBoxes) {
+        const ctx = canvas.getContext("2d");
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+        animationId = requestAnimationFrame(detectFaces);
+        return;
+      }
       // Face detection (frame)
       const detections = await faceapi.detectAllFaces(
         video,
@@ -117,7 +125,7 @@ export default function OpenCVCameraComponent() {
     };
     animationId = requestAnimationFrame(detectFaces);
     return () => animationId && cancelAnimationFrame(animationId);
-  }, [modelsLoaded, results]);
+  }, [modelsLoaded, results, showBoundingBoxes]);
 
   // WebSocket & Frame Send Logic (unchanged)
   const getWsConfig = (): { url: string; action: "mengambil" | "mengembalikan"; } => {
@@ -230,7 +238,7 @@ export default function OpenCVCameraComponent() {
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full"
-          style={{ zIndex: 2, pointerEvents: "none" }}
+          style={{ zIndex: 2, pointerEvents: "none", opacity: showBoundingBoxes ? 1 : 0 }}
         />
       </div>
       <FloatingButton />
@@ -248,6 +256,10 @@ export default function OpenCVCameraComponent() {
           disabled={!isConnected}
           className="px-4 py-2 bg-red-500 text-white rounded-lg disabled:opacity-50"
         >Stop</button>
+        <button
+          onClick={() => setShowBoundingBoxes(v => !v)}
+          className={`px-4 py-2 rounded-lg text-white ${showBoundingBoxes ? "bg-yellow-500" : "bg-gray-500"}`}
+        >Face Box: {showBoundingBoxes ? "On" : "Off"}</button>
       </div>
       <div className="absolute top-4 left-4 flex flex-col gap-2">
         <BackButton />
