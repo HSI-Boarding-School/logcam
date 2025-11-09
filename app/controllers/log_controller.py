@@ -3,11 +3,11 @@ from app.database import SessionLocal
 from app.models import Student, LogBook
 from app.services.face_service import compare_faces
 from datetime import datetime, date
-import cv2, base64, json, numpy as np, face_recognition
+import cv2, base64, json, numpy as np
 
 
 def b64_to_cv2_img(b64str: str):
-    """Konversi base64 string menjadi gambar OpenCV."""
+    """Convert a base64 string into an OpenCV image."""
     header, data = b64str.split(",", 1) if "," in b64str else (None, b64str)
     img_bytes = base64.b64decode(data)
     np_arr = np.frombuffer(img_bytes, np.uint8)
@@ -15,7 +15,7 @@ def b64_to_cv2_img(b64str: str):
 
 
 async def process_log(websocket: WebSocket, tipe: str):
-    """Proses deteksi wajah dan pencatatan log buku."""
+    """Perform face detection and record log entries."""
     db = SessionLocal()
     students = db.query(Student).all()
     known_encodings = [np.array(s.face_embedding) for s in students if s.face_embedding]
@@ -33,12 +33,14 @@ async def process_log(websocket: WebSocket, tipe: str):
             small = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
             rgb_small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
 
+            # Lazy import of face_recognition at usage time
+            import face_recognition  # type: ignore
             face_encs = face_recognition.face_encodings(rgb_small)
             results_list = []
 
             for enc in face_encs:
                 results, dists = compare_faces(known_encodings, enc)
-                name, status = "Unknown", "NOT_FOUND"
+                name, status = "Unknown Face", "NOT_FOUND"
 
                 if True in results:
                     idx = int(np.argmin(dists))
@@ -58,12 +60,16 @@ async def process_log(websocket: WebSocket, tipe: str):
                         log = LogBook(student_id=student.id, tipe=tipe)
                         db.add(log)
 
-                    if action == "mengambil":
+                    changed = False
+                    if action == "mengambil" and log.mengambil != "SUDAH":
                         log.mengambil = "SUDAH"
-                    elif action == "mengembalikan":
+                        changed = True
+                    elif action == "mengembalikan" and log.mengembalikan != "SUDAH":
                         log.mengembalikan = "SUDAH"
+                        changed = True
 
-                    db.commit()
+                    if changed:
+                        db.commit()
                     status = f"{action.upper()}_SUCCESS"
 
                 results_list.append({"name": name, "status": status})
