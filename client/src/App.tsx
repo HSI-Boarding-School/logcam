@@ -29,7 +29,7 @@ const App = () => (
       <ReactQueryDevtools />
       <BrowserRouter>
         <Routes>
-          {/* ✅ ROUTE DENGAN SIDEBAR & TOPBAR */}
+          {/* ✅ Routes with Sidebar & Topbar */}
           <Route
             path="/*"
             element={

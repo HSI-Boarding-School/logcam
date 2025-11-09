@@ -1,0 +1,88 @@
+## compose (moved under infra/compose)
+version: "3.9"
+name: logcam
+
+services:
+  db:
+    image: postgres:16
+    container_name: logcam-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: QQwwee123__
+      POSTGRES_DB: shiners_lms_db
+      POSTGRES_USER: logcam
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h localhost || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: ./infra/docker/backend.Dockerfile
+    container_name: logcam-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request;urllib.request.urlopen(\"http://localhost:8000/api/healthz\")' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    environment:
+      DB_USER: logcam
+      DB_PASSWORD: QQwwee123__
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: shiners_lms_db
+      # Set allowed origins to Nginx host (adjust for your domain)
+      ALLOWED_ORIGINS: http://localhost,http://127.0.0.1,https://logcam.naflatech.com
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../../client
+      dockerfile: ./Dockerfile
+    container_name: logcam-frontend
+    restart: unless-stopped
+    environment:
+      # If you refactor frontend to use env, expose an API base like:
+      # NEXT_PUBLIC_API_BASE: http://localhost/api
+      # NEXT_PUBLIC_WS_BASE: ws://localhost/ws
+      NODE_ENV: production
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: logcam-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../../infra/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../../certbot/conf:/etc/letsencrypt
+      - ../../certbot/www:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+
+  certbot:
+    image: certbot/certbot
+    container_name: logcam-certbot
+    volumes:
+      - ../../certbot/conf:/etc/letsencrypt
+      - ../../certbot/www:/var/www/certbot
+    entrypoint: sh
+    command: -c "sleep infinity"
+
+volumes:
+  db_data:
+
+  
+  
+  

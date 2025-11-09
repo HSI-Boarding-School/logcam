@@ -1,0 +1,18 @@
+# Global Docker ignore to reduce build context
+.git
+.gitignore
+**/.DS_Store
+**/*.log
+**/node_modules
+client/node_modules
+client/dist
+client/.next
+client/.vite
+**/.cache
+__pycache__
+*.pyc
+certbot/conf
+certbot/www
+.env
+.env.*
+!.env.example

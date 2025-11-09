@@ -7,6 +7,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import axios from "axios";
+import { API_BASE } from "@/lib/config";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -40,7 +41,7 @@ export default function Dashboard() {
       hour12: false,
     });
 
-    return `${datePart}, ${timePart}`; // hasil: 5/9/2025, 13:28:36
+    return `${datePart}, ${timePart}`; // example: 5/9/2025, 13:28:36
   }
 
   const {
@@ -60,7 +61,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/users/all/users");
+        const res = await axios.get(`${API_BASE}/users/all`);
         const countUser = res.data["users"];
         setTotalUser(countUser.length);
       } catch (err) {
@@ -74,8 +75,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchLogs = async () => {
       const [laptopRes, hpRes] = await Promise.all([
-        axios.get("http://127.0.0.1:8000/users/all/log-laptop"),
-        axios.get("http://127.0.0.1:8000/users/all/log-hp"),
+        axios.get(`${API_BASE}/users/all/log-laptop`),
+        axios.get(`${API_BASE}/users/all/log-hp`),
       ]);
 
       const laptopLogs = laptopRes.data["log-laptop"];

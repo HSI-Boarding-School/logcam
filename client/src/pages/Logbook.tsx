@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
+import { API_BASE } from "@/lib/config";
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
@@ -43,9 +44,9 @@ export default function Logbook() {
     const fetchLogs = async () => {
       try {
         const [laptopRes, hpRes, usersRes] = await Promise.all([
-          axios.get("http://127.0.0.1:8000/users/all/log-laptop"),
-          axios.get("http://127.0.0.1:8000/users/all/log-hp"),
-          axios.get("http://127.0.0.1:8000/users/all/users"),
+          axios.get(`${API_BASE}/users/all/log-laptop`),
+          axios.get(`${API_BASE}/users/all/log-hp`),
+          axios.get(`${API_BASE}/users/all`),
         ])
 
         const usersData = usersRes.data.users || usersRes.data

@@ -1,0 +1,15 @@
+## compose (moved under infra/compose)
+version: "3.9"
+name: logcam
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+    build: ~
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    build: ~
+
+  nginx:
+    image: ${NGINX_IMAGE}

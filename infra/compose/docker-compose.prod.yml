@@ -1,0 +1,20 @@
+## compose (moved under infra/compose)
+version: "3.9"
+name: logcam
+
+services:
+  backend:
+    environment:
+      # Use the real domain in CORS allow list (harmless if unused)
+      ALLOWED_ORIGINS: https://logcam.naflatech.com
+
+  nginx:
+    volumes:
+      - ../../infra/nginx/prod-ssl.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../../certbot/conf:/etc/letsencrypt
+      - ../../certbot/www:/var/www/certbot
+  
+  # Disable the separate frontend container in production; only used in dev profile
+  frontend:
+    profiles:
+      - dev
