@@ -40,8 +40,12 @@ jobs:
           tags: |
             ${{ env.IMAGE_BACKEND }}:${{ github.sha }}
             ${{ env.IMAGE_BACKEND }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.IMAGE_BACKEND }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.IMAGE_BACKEND }}:buildcache,mode=max
 
       - name: Build & push frontend image
         uses: docker/build-push-action@v5
@@ -56,8 +60,12 @@ jobs:
           build-args: |
             VITE_API_BASE=https://logcam.naflatech.com/api
             VITE_WS_BASE=wss://logcam.naflatech.com
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.IMAGE_FRONTEND }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.IMAGE_FRONTEND }}:buildcache,mode=max
 
       - name: Build & push nginx web image (static frontend)
         uses: docker/build-push-action@v5
@@ -72,8 +80,12 @@ jobs:
           build-args: |
             VITE_API_BASE=https://logcam.naflatech.com/api
             VITE_WS_BASE=wss://logcam.naflatech.com
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=ghcr.io/${{ github.repository }}/web:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=ghcr.io/${{ github.repository }}/web:buildcache,mode=max
 
   deploy:
     needs: build-and-push
