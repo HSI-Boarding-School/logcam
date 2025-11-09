@@ -25,7 +25,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* ✅ ROUTE DENGAN SIDEBAR & TOPBAR */}
+          {/* ✅ Routes with Sidebar & Topbar */}
           <Route
             path="/*"
             element={

@@ -81,7 +81,7 @@ export default function DashboardPage() {
           item.mengembalikan === "BELUM"
       );
 
-      // cari yang hari ini (bandingin tanggal aja)
+      // Filter logs for today (compare date only)
       const today = new Date().toLocaleDateString("id-ID", {
         timeZone: "Asia/Jakarta",
       });
