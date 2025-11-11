@@ -22,7 +22,9 @@ export default function OpenCVCameraComponent() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const manuallyStoppedRef = useRef(false);
 
   const [isConnected, setIsConnected] = useState(false);
@@ -43,14 +45,18 @@ export default function OpenCVCameraComponent() {
       ]);
       if (isActive) setModelsLoaded(true);
     })();
-    return () => { isActive = false; };
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   // Camera
   useEffect(() => {
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
         if (videoRef.current) videoRef.current.srcObject = stream;
         streamRef.current = stream;
       } catch (err) {
@@ -74,15 +80,18 @@ export default function OpenCVCameraComponent() {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       if (
-        !video || !canvas ||
-        video.videoWidth === 0 || video.videoHeight === 0 ||
+        !video ||
+        !canvas ||
+        video.videoWidth === 0 ||
+        video.videoHeight === 0 ||
         video.readyState !== 4
       ) {
         animationId = requestAnimationFrame(detectFaces);
         return;
       }
       if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
-      if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+      if (canvas.height !== video.videoHeight)
+        canvas.height = video.videoHeight;
       // If bounding boxes are disabled, clear the canvas and skip heavy detection
       if (!showBoundingBoxes) {
         const ctx = canvas.getContext("2d");
@@ -101,7 +110,8 @@ export default function OpenCVCameraComponent() {
       // Matching detection box color with results (by index)
       detections.forEach((det, idx) => {
         // Default colors
-        let boxColor = "red", label = "Unknown Face";
+        let boxColor = "red",
+          label = "Unknown Face";
         if (results[idx]) {
           if (
             (results[idx].status && results[idx].status.endsWith("_SUCCESS")) ||
@@ -128,26 +138,43 @@ export default function OpenCVCameraComponent() {
   }, [modelsLoaded, results, showBoundingBoxes]);
 
   // WebSocket & Frame Send Logic (unchanged)
-  const getWsConfig = (): { url: string; action: "mengambil" | "mengembalikan"; } => {
+  const getWsConfig = (): {
+    url: string;
+    action: "mengambil" | "mengembalikan";
+  } => {
     const isBrowser = typeof window !== "undefined";
     const path = isBrowser ? window.location.pathname : "/";
     const base = resolveWsBase();
     if (path.startsWith("/return-")) {
-      if (path === "/return-phone") return { url: `${base}/ws/log-hp`, action: "mengembalikan" };
-      if (path === "/return-laptop") return { url: `${base}/ws/log-laptop`, action: "mengembalikan" };
+      if (path === "/return-phone")
+        return {
+          url: `http://localhost:8000/ws/log-hp`,
+          action: "mengembalikan",
+        };
+      if (path === "/return-laptop")
+        return { url: `${base}/ws/log-laptop`, action: "mengembalikan" };
     } else if (path.startsWith("/take-")) {
-      if (path === "/take-phone") return { url: `${base}/ws/log-hp`, action: "mengambil" };
-      if (path === "/take-laptop") return { url: `${base}/ws/log-laptop`, action: "mengambil" };
+      if (path === "/take-phone")
+        return { url: `${base}/ws/log-hp`, action: "mengambil" };
+      if (path === "/take-laptop")
+        return { url: `${base}/ws/log-laptop`, action: "mengambil" };
     }
     return { url: `${base}/ws/log-hp`, action: "mengambil" };
   };
   const sendFrame = useCallback((action: "mengambil" | "mengembalikan") => {
-    if (!videoRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (
+      !videoRef.current ||
+      !wsRef.current ||
+      wsRef.current.readyState !== WebSocket.OPEN
+    )
+      return;
     const video = videoRef.current;
     if (video.videoWidth === 0 || video.videoHeight === 0) return;
     try {
       const targetWidth = Math.min(640, video.videoWidth);
-      const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth);
+      const targetHeight = Math.round(
+        (video.videoHeight / video.videoWidth) * targetWidth
+      );
       const canvas = document.createElement("canvas");
       canvas.width = targetWidth;
       canvas.height = targetHeight;
@@ -174,10 +201,15 @@ export default function OpenCVCameraComponent() {
       const { url, action } = getWsConfig();
       wsRef.current = new WebSocket(url);
       wsRef.current.onopen = () => {
-        setIsConnected(true); setError(null);
-        reconnectAttemptsRef.current = 0; manuallyStoppedRef.current = false;
+        setIsConnected(true);
+        setError(null);
+        reconnectAttemptsRef.current = 0;
+        manuallyStoppedRef.current = false;
         setElapsedTime(0);
-        timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
+        timerRef.current = setInterval(
+          () => setElapsedTime((t) => t + 1),
+          1000
+        );
         intervalRef.current = setInterval(() => sendFrame(action), 2000);
       };
       wsRef.current.onmessage = (event) => {
@@ -205,24 +237,51 @@ export default function OpenCVCameraComponent() {
   }, [sendFrame]);
   const stopWebSocket = useCallback(() => {
     manuallyStoppedRef.current = true;
-    if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    setIsConnected(false); setResults([]); setElapsedTime(0);
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsConnected(false);
+    setResults([]);
+    setElapsedTime(0);
   }, []);
   useEffect(() => {
     return () => {
       manuallyStoppedRef.current = true;
-      if (wsRef.current) { try { wsRef.current.close(); } catch {} wsRef.current = null; }
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-      if (reconnectTimeoutRef.current) { clearTimeout(reconnectTimeoutRef.current); reconnectTimeoutRef.current = null; }
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {}
+        wsRef.current = null;
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
   }, []);
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -238,7 +297,11 @@ export default function OpenCVCameraComponent() {
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full"
-          style={{ zIndex: 2, pointerEvents: "none", opacity: showBoundingBoxes ? 1 : 0 }}
+          style={{
+            zIndex: 2,
+            pointerEvents: "none",
+            opacity: showBoundingBoxes ? 1 : 0,
+          }}
         />
       </div>
       <FloatingButton />
@@ -250,16 +313,24 @@ export default function OpenCVCameraComponent() {
           onClick={startWebSocket}
           disabled={isConnected}
           className="px-4 py-2 bg-green-500 text-white rounded-lg disabled:opacity-50"
-        >Start</button>
+        >
+          Start
+        </button>
         <button
           onClick={stopWebSocket}
           disabled={!isConnected}
           className="px-4 py-2 bg-red-500 text-white rounded-lg disabled:opacity-50"
-        >Stop</button>
+        >
+          Stop
+        </button>
         <button
-          onClick={() => setShowBoundingBoxes(v => !v)}
-          className={`px-4 py-2 rounded-lg text-white ${showBoundingBoxes ? "bg-yellow-500" : "bg-gray-500"}`}
-        >Face Box: {showBoundingBoxes ? "On" : "Off"}</button>
+          onClick={() => setShowBoundingBoxes((v) => !v)}
+          className={`px-4 py-2 rounded-lg text-white ${
+            showBoundingBoxes ? "bg-yellow-500" : "bg-gray-500"
+          }`}
+        >
+          Face Box: {showBoundingBoxes ? "On" : "Off"}
+        </button>
       </div>
       <div className="absolute top-4 left-4 flex flex-col gap-2">
         <BackButton />
@@ -278,13 +349,16 @@ export default function OpenCVCameraComponent() {
                 className={`px-3 py-2 rounded-md font-extrabold text-7xl ${
                   result.status?.endsWith("_SUCCESS")
                     ? "text-green-500 drop-shadow-[0_0_4px_black]"
-                    : result.status === "NOT_FOUND" || result.name === "Unknown Face"
-                      ? "text-red-500 drop-shadow-[0_0_4px_black]"
-                      : "text-orange-500 drop-shadow-[0_0_4px_black]"
+                    : result.status === "NOT_FOUND" ||
+                      result.name === "Unknown Face"
+                    ? "text-red-500 drop-shadow-[0_0_4px_black]"
+                    : "text-orange-500 drop-shadow-[0_0_4px_black]"
                 }`}
               >
                 <div className="flex items-center justify-center">
-                  <span className="truncate">{result.name || "Unknown Face"}</span>
+                  <span className="truncate">
+                    {result.name || "Unknown Face"}
+                  </span>
                 </div>
               </div>
             ))}
