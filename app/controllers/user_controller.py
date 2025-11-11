@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from datetime import datetime, timedelta
 from jose import jwt
 from sqlalchemy.orm import Session
-from app.models import User
+from app.models import User, UserRole, Role
 from app.database import SessionLocal
 from pydantic import BaseModel
 import bcrypt
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 2880  # token expires in 2 days
 
@@ -23,18 +23,14 @@ class LoginRequest(BaseModel):
 
 def verify_password(plain_password: str, hashed_password: str):
     try:
-        # ensure the hash is in bytes
         hashed_bytes = hashed_password.encode("utf-8")
         password_bytes = plain_password.encode("utf-8")
-
         return bcrypt.checkpw(password_bytes, hashed_bytes)
-
     except Exception:
         raise HTTPException(
             status_code=400,
             detail="Invalid password hash format or not verifiable."
         )
-
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -47,17 +43,32 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 def login_user(request: LoginRequest):
     db: Session = SessionLocal()
     try:
+        # 🔹 Cari user berdasarkan email
         user = db.query(User).filter(User.email == request.email).first()
-
         if not user:
             raise HTTPException(status_code=401, detail="Email is not registered")
 
-        # Verify password using bcrypt
+        # 🔹 Verifikasi password
         if not verify_password(request.password, user.password_hash):
             raise HTTPException(status_code=401, detail="Incorrect password")
 
-        # Generate JWT token
-        access_token = create_access_token({"sub": str(user.id)})
+        # 🔹 Ambil role user (JOIN ke Role)
+        user_role = (
+            db.query(Role.name)
+            .join(UserRole, Role.id == UserRole.role_id)
+            .filter(UserRole.user_id == user.id)
+            .first()
+        )
+
+        if not user_role:
+            raise HTTPException(status_code=403, detail="User does not have any role assigned")
+
+        # 🔹 Cek apakah rolenya ADMIN
+        if user_role.name.upper() != "ADMIN":
+            raise HTTPException(status_code=403, detail="Access denied: only ADMIN can login")
+
+        # 🔹 Generate JWT token
+        access_token = create_access_token({"sub": str(user.id), "role": user_role.name})
 
         return {
             "message": "Login success",
@@ -67,7 +78,9 @@ def login_user(request: LoginRequest):
                 "id": str(user.id),
                 "name": user.name,
                 "email": user.email,
+                "role": user_role.name,
             },
         }
+
     finally:
         db.close()

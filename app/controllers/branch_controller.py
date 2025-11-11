@@ -1,4 +1,3 @@
-# app/controllers/branch_controller.py
 from fastapi import HTTPException
 from app.database import SessionLocal
 from app.models import Branch
