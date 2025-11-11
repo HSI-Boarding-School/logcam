@@ -12,7 +12,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import api from "../lib/api";
 export interface Logbook {
   id: number;
   user_id: number;
@@ -44,19 +44,19 @@ export default function Dashboard() {
     return `${datePart}, ${timePart}`; // example: 5/9/2025, 13:28:36
   }
 
-  const {
-    data: users,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["users"],
-    queryFn: async () => {
-      const res = await api.get("/users/all/users");
-      return res.data.users
-    },
-  });
+  // const {
+  //   data: users,
+  //   isLoading,
+  //   isError,
+  // } = useQuery({
+  //   queryKey: ["users"],
+  //   queryFn: async () => {
+  //     const res = await api.get("/users/all/users");
+  //     return res.data.users
+  //   },
+  // });
 
-  console.log("CONSOLE LOG USERS :", users)
+  // console.log("CONSOLE LOG USERS :", users)
 
   useEffect(() => {
     const fetchCount = async () => {

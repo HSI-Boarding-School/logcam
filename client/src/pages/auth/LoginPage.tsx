@@ -1,18 +1,29 @@
+// pages/LoginPage.tsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock } from "lucide-react";
+import { LogIn, Mail, Lock, AlertCircle } from "lucide-react";
+import useAuthStore from "../../../stores/useAuthStore";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const { login, isLoading, error, clearError } = useAuthStore();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic will be implemented later
-    console.log("Login attempt:", { email, password });
+
+    try {
+      await login({ email, password });
+      navigate("/"); // Redirect after login succes
+    } catch (err) {
+      // Error already handled in store
+      console.error("Login failed:", err);
+    }
   };
 
   return (
@@ -22,7 +33,7 @@ const LoginPage = () => {
           {/* Logo/Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-primary mb-4">
-              <img src="@/../public/logo.webp" alt="" />
+              <img src="/logo.webp" alt="Logcam Logo" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gradient-primary mb-2">
               Welcome Back
@@ -31,6 +42,22 @@ const LoginPage = () => {
               Sign in to access your Logcam dashboard
             </p>
           </div>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-fade-in">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+              <button
+                onClick={clearError}
+                className="text-red-400 hover:text-red-600 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -45,8 +72,12 @@ const LoginPage = () => {
                   type="email"
                   placeholder="student@hsibs.edu"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearError(); // Clear error saat user ketik
+                  }}
                   className="pl-11 h-12 rounded-xl bg-background/50 border-border/50 focus:border-primary transition-all"
+                  disabled={isLoading}
                   required
                 />
               </div>
@@ -63,8 +94,12 @@ const LoginPage = () => {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearError(); // Clear error saat user ketik
+                  }}
                   className="pl-11 h-12 rounded-xl bg-background/50 border-border/50 focus:border-primary transition-all"
+                  disabled={isLoading}
                   required
                 />
               </div>
@@ -75,6 +110,7 @@ const LoginPage = () => {
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-border accent-primary"
+                  disabled={isLoading}
                 />
                 <span className="text-muted-foreground">Remember me</span>
               </label>
@@ -91,8 +127,35 @@ const LoginPage = () => {
               variant="gradient"
               size="lg"
               className="w-full h-12 text-base font-semibold"
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
 

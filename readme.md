@@ -62,20 +62,7 @@ GitHub Actions builds multi‑arch images (backend, web) and deploys to server v
 From the repo root:
 
 ```
-make dev          # start dev stack
-make down         # stop dev stack
-make prod         # start prod stack with SSL override
-make issue-cert   # obtain Let’s Encrypt cert
-make deploy       # compose up with deploy override (uses CI images)
-make logs         # tail all services
-make backend-logs # tail backend
-make nginx-logs   # tail Nginx
-make psql         # connect to Postgres in container
-make local-backend  # run FastAPI locally (no Docker)
-make local-frontend # run Vite/Bun locally (no Docker)
-make db-up          # start only database in Docker (dev)
-make db-down        # stop database container
-```
+ma
 
 ## Local Development (without Docker)
 If you prefer to run without Docker:
