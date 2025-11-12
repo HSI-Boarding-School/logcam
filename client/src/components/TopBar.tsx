@@ -2,7 +2,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import useAuthStore from "../../stores/useAuthStore";
+import useAuthStore from "@/stores/useAuthStore";
 
 
 export function TopBar() {

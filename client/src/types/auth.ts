@@ -11,7 +11,7 @@ export interface Branch {
 export interface User {
   id: number;
   name: string;
-  email: string;
+  email?: string;
   branch_id: number;
   branch?: Branch;
   role?: string;
@@ -20,6 +20,13 @@ export interface User {
   updated_at?: string;
 }
 
+export interface Students {
+  id: number;
+  name: string;
+  tipe_class: string;
+  branch_id: number;
+  branch_name: string;
+}
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -42,7 +49,8 @@ export interface AuthState {
 }
 
 export interface AuthActions {
-  login: (credentials: LoginCredentials) => Promise<LoginResponse>;
+  // login: (credentials: LoginCredentials) => Promise<LoginResponse>;
+  login;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;

@@ -17,7 +17,6 @@ import TakePhone from "./pages/camera/take-phone";
 import TakeLaptop from "./pages/camera/take-laptop";
 import ReturnPhone from "./pages/camera/return-phone";
 import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -64,7 +63,6 @@ const App = () => (
 
           {/* AUTH */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

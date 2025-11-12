@@ -1,6 +1,6 @@
 // services/authService.ts
 import api from "@/lib/api";
-import type { LoginCredentials, LoginResponse, User } from "types/auth";
+import type { LoginCredentials, LoginResponse, Students } from "@/types/auth";
 
 const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
@@ -19,8 +19,8 @@ const authService = {
     }
   },
 
-  getCurrentUser: async (): Promise<User> => {
-    const { data } = await api.get<User>("/api/auth/me");
+  getCurrentUser: async (): Promise<Students> => {
+    const { data } = await api.get<Students>("/api/auth/me");
     return data;
   },
 
