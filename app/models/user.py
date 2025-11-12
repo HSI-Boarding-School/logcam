@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime, Text
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
@@ -13,6 +14,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.id"))
 
     is_active = Column(Boolean, default=True)
     reset_token = Column(String(255), nullable=True)
@@ -21,3 +23,5 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
+
+    branch = relationship("Branch", back_populates="user")

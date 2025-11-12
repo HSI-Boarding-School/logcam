@@ -16,7 +16,7 @@ class AdminMiddleware(BaseHTTPMiddleware):
         db = SessionLocal()
         try:
             
-            public_paths = ["/auth/login", "/docs", "/api/openapi.json"]
+            public_paths = ["/auth/login", "/users/all", "/users/all/log-hp", "/users/all/log-laptop", "/docs", "/api/openapi.json"]
             if any(request.url.path.startswith(p) for p in public_paths):
                 return await call_next(request)
 

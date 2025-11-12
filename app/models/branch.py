@@ -10,3 +10,4 @@ class Branch(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     student = relationship("Student", back_populates="branch")
+    user = relationship("User", back_populates="branch")
