@@ -10,10 +10,39 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 
+// Helper function untuk get current user
+function getCurrentUser() {
+  try {
+    const userString = localStorage.getItem('user')
+    if (!userString) return null
+    return JSON.parse(userString)
+  } catch (error) {
+    console.error('Error parsing user:', error)
+    return null
+  }
+}
+
 export default function UserList() {
   const { data: users, isLoading, isError } = useStudent()
   const [selectedClass, setSelectedClass] = useState("")
+  const [selectedBranch, setSelectedBranch] = useState("")
 
+  // Get current user and check role
+  const currentUser = getCurrentUser()
+  const isAdmin = currentUser?.role === 'admin'
+  
+  console.log('👤 Current user:', currentUser)
+  console.log('🔑 Is admin?', isAdmin)
+
+  // === DEBUGGING: CEK DATA ===
+  console.log('🔍 DEBUG INFO:')
+  console.log('isLoading:', isLoading)
+  console.log('isError:', isError)
+  console.log('users:', users)
+  console.log('users type:', typeof users)
+  console.log('users is array?', Array.isArray(users))
+
+  // === EARLY RETURNS (PENTING!) ===
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-80 text-muted-foreground animate-pulse">
@@ -30,12 +59,38 @@ export default function UserList() {
     )
   }
 
-  // pastikan users ada sebelum mapping
-  const classOptions = Array.from(new Set(users?.map((u) => u.tipe_class) || []))
-  const filteredData = selectedClass && selectedClass !== "all"
-    ? users?.filter((u) => u.tipe_class === selectedClass)
-    : users
+  // Check jika users tidak ada atau bukan array
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-80 text-muted-foreground">
+        No student data available.
+      </div>
+    )
+  }
 
+  // === SAFE: Extract options ===
+  const branchOptions = Array.from(new Set(users.map((u) => u.branch_name)))
+  const classOptions = Array.from(new Set(users.map((u) => u.tipe_class)))
+  
+  console.log('✅ Branch options:', branchOptions)
+  console.log('✅ Class options:', classOptions)
+
+  // === FILTERING LOGIC ===
+  let filteredData = users
+
+  // Filter by branch (jika admin memilih)
+  if (selectedBranch && selectedBranch !== "all") {
+    filteredData = filteredData.filter((u) => u.branch_name === selectedBranch)
+  }
+
+  // Filter by class (jika dipilih)
+  if (selectedClass && selectedClass !== "all") {
+    filteredData = filteredData.filter((u) => u.tipe_class === selectedClass)
+  }
+
+  console.log('📊 Filtered data count:', filteredData.length)
+
+  // === RENDER UI ===
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-[1440px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -53,21 +108,42 @@ export default function UserList() {
         </Button>
       </div>
 
-      <Select value={selectedClass} onValueChange={setSelectedClass}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="All" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All</SelectItem>
-          {classOptions.map((kelas, idx) => (
-            <SelectItem key={idx} value={kelas}>
-              {kelas}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* FILTERS */}
+      <div className="flex gap-4">
+        {/* Branch Filter - HANYA UNTUK ADMIN */}
+        {isAdmin && (
+          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Branches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Branches</SelectItem>
+              {branchOptions.map((branch, idx) => (
+                <SelectItem key={idx} value={branch}>
+                  {branch}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
-      {/* Table */}
+        {/* Class Filter - UNTUK SEMUA */}
+        <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Classes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {classOptions.map((kelas, idx) => (
+              <SelectItem key={idx} value={kelas}>
+                {kelas}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* TABLE */}
       <Card className="border-2 card-hover-lift">
         <CardHeader className="border-b bg-muted/30 p-4 sm:p-6">
           <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
@@ -88,7 +164,7 @@ export default function UserList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData && filteredData.length > 0 ? (
+                {filteredData.length > 0 ? (
                   filteredData.map((user, index) => (
                     <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell className="text-center">{index + 1}</TableCell>
