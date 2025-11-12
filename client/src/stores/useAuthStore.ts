@@ -1,8 +1,8 @@
 // stores/useAuthStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import authService from '../src/services/authService';
-import type { AuthStore, LoginCredentials } from '../types/auth';
+import authService from '@/services/authService';
+import type { AuthStore, LoginCredentials } from '@/types/auth';
 
 const useAuthStore = create<AuthStore>()(
   persist(

@@ -1,5 +1,5 @@
 // services/authService.ts
-import api from "../lib/api";
+import api from "@/lib/api";
 import type { LoginCredentials, LoginResponse, User } from "types/auth";
 
 const authService = {
