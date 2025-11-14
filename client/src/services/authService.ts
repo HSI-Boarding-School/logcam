@@ -5,7 +5,7 @@ import type { LoginCredentials, LoginResponse, Students } from "@/types/auth";
 const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     const response = await api.post<LoginResponse>(
-      "/api/auth/login",
+      "/auth/login",
       credentials
     );
     return response.data;
@@ -13,7 +13,7 @@ const authService = {
 
   logout: async (): Promise<void> => {
     try {
-      await api.post("/api/auth/logout");
+      await api.post("/auth/logout");
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -22,18 +22,18 @@ const authService = {
   },
 
   getCurrentUser: async (): Promise<Students> => {
-    const { data } = await api.get<Students>("/api/auth/me");
+    const { data } = await api.get<Students>("/auth/me");
     return data;
   },
 
   refreshToken: async (): Promise<{ token: string }> => {
-    const { data } = await api.post<{ token: string }>("/api/auth/refresh");
+    const { data } = await api.post<{ token: string }>("/auth/refresh");
     return data;
   },
 
   verifyToken: async (): Promise<{ valid: boolean }> => {
     try {
-      const { data } = await api.get<{ valid: boolean }>("/api/auth/verify");
+      const { data } = await api.get<{ valid: boolean }>("/auth/verify");
       return data;
     } catch (error) {
       return { valid: false };

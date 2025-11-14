@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 
-// Helper function untuk get current user
+// Helper function for get current user
 function getCurrentUser() {
   try {
     const userString = localStorage.getItem('user')
@@ -34,7 +34,7 @@ export default function UserList() {
   console.log('👤 Current user:', currentUser)
   console.log('🔑 Is admin?', isAdmin)
 
-  // === DEBUGGING: CEK DATA ===
+  // === DEBUGGING: CHECK DATA ===
   console.log('🔍 DEBUG INFO:')
   console.log('isLoading:', isLoading)
   console.log('isError:', isError)
@@ -42,7 +42,7 @@ export default function UserList() {
   console.log('users type:', typeof users)
   console.log('users is array?', Array.isArray(users))
 
-  // === EARLY RETURNS (PENTING!) ===
+  // === EARLY RETURNS ===
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-80 text-muted-foreground animate-pulse">
@@ -59,7 +59,7 @@ export default function UserList() {
     )
   }
 
-  // Check jika users tidak ada atau bukan array
+  // Check if users there is not or not array
   if (!users || !Array.isArray(users) || users.length === 0) {
     return (
       <div className="flex items-center justify-center h-80 text-muted-foreground">
