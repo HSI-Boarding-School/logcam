@@ -76,6 +76,7 @@ def login_user(request: LoginRequest):
                 "name": user.name,
                 "email": user.email,
                 "role": user_role.name,
+                "branch_id": user.branch_id if user.branch else None,
                 "branch_name": branch_name,
             },
         }

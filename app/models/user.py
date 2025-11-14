@@ -25,3 +25,4 @@ class User(Base):
     deleted_at = Column(DateTime, nullable=True)
 
     branch = relationship("Branch", back_populates="user")
+    student = relationship("Student", back_populates="user")
