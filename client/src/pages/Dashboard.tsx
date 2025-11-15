@@ -44,20 +44,6 @@ export default function Dashboard() {
     return `${datePart}, ${timePart}`; // example: 5/9/2025, 13:28:36
   }
 
-  // const {
-  //   data: users,
-  //   isLoading,
-  //   isError,
-  // } = useQuery({
-  //   queryKey: ["users"],
-  //   queryFn: async () => {
-  //     const res = await api.get("/users/all/users");
-  //     return res.data.users
-  //   },
-  // });
-
-  // console.log("CONSOLE LOG USERS :", users)
-
   useEffect(() => {
     const fetchCount = async () => {
       try {

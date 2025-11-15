@@ -1,67 +1,98 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { API_BASE } from "@/lib/config";
+import { useStudent } from "@/hooks/useStudent"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
 
-interface User {
-  id: number;
-  name: string;
-  tipe_class: string;
-  created_at: string;
+// Helper function for get current user
+function getCurrentUser() {
+  try {
+    const userString = localStorage.getItem('user')
+    if (!userString) return null
+    return JSON.parse(userString)
+  } catch (error) {
+    console.error('Error parsing user:', error)
+    return null
+  }
 }
 
 export default function UserList() {
-  const [data, setData] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedClass, setSelectedClass] = useState<string>("");
+  const { data: users, isLoading, isError } = useStudent()
+  const [selectedClass, setSelectedClass] = useState("")
+  const [selectedBranch, setSelectedBranch] = useState("")
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/users/all`);
-        setData(res.data.users);
-      } catch (err) {
-        console.error("❌ Failed to fetch users:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Get current user and check role
+  const currentUser = getCurrentUser()
+  const isAdmin = currentUser?.role === 'admin'
+  
+  console.log('👤 Current user:', currentUser)
+  console.log('🔑 Is admin?', isAdmin)
 
-    fetchUsers();
-  }, []);
+  // === DEBUGGING: CHECK DATA ===
+  console.log('🔍 DEBUG INFO:')
+  console.log('isLoading:', isLoading)
+  console.log('isError:', isError)
+  console.log('users:', users)
+  console.log('users type:', typeof users)
+  console.log('users is array?', Array.isArray(users))
 
-  // unique class list for dropdown
-  const classOptions = Array.from(new Set(data.map((u) => u.tipe_class)));
-
-  // filtered data
-  const filteredData = selectedClass
-    ? data.filter((user) => user.tipe_class === selectedClass)
-    : data;
-
-  if (loading) {
+  // === EARLY RETURNS ===
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-80 text-muted-foreground animate-pulse">
         Loading user data...
       </div>
-    );
+    )
   }
 
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-80 text-red-500">
+        Failed to load user data.
+      </div>
+    )
+  }
+
+  // Check if users there is not or not array
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-80 text-muted-foreground">
+        No student data available.
+      </div>
+    )
+  }
+
+  // === SAFE: Extract options ===
+  const branchOptions = Array.from(new Set(users.map((u) => u.branch_name)))
+  const classOptions = Array.from(new Set(users.map((u) => u.tipe_class)))
+  
+  console.log('✅ Branch options:', branchOptions)
+  console.log('✅ Class options:', classOptions)
+
+  // === FILTERING LOGIC ===
+  let filteredData = users
+
+  // Filter by branch (jika admin memilih)
+  if (selectedBranch && selectedBranch !== "all") {
+    filteredData = filteredData.filter((u) => u.branch_name === selectedBranch)
+  }
+
+  // Filter by class (jika dipilih)
+  if (selectedClass && selectedClass !== "all") {
+    filteredData = filteredData.filter((u) => u.tipe_class === selectedClass)
+  }
+
+  console.log('📊 Filtered data count:', filteredData.length)
+
+  // === RENDER UI ===
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-[1440px] mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
@@ -77,15 +108,32 @@ export default function UserList() {
         </Button>
       </div>
 
-      {/* Filter */}
-      <div className="flex items-center gap-3">
-        <label className="font-medium text-sm sm:text-base">Filter by Class Type:</label>
+      {/* FILTERS */}
+      <div className="flex gap-4">
+        {/* Branch Filter - HANYA UNTUK ADMIN */}
+        {isAdmin && (
+          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Branches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Branches</SelectItem>
+              {branchOptions.map((branch, idx) => (
+                <SelectItem key={idx} value={branch}>
+                  {branch}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Class Filter - UNTUK SEMUA */}
         <Select value={selectedClass} onValueChange={setSelectedClass}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All" />
+            <SelectValue placeholder="All Classes" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="all">All Classes</SelectItem>
             {classOptions.map((kelas, idx) => (
               <SelectItem key={idx} value={kelas}>
                 {kelas}
@@ -95,7 +143,7 @@ export default function UserList() {
         </Select>
       </div>
 
-      {/* Table */}
+      {/* TABLE */}
       <Card className="border-2 card-hover-lift">
         <CardHeader className="border-b bg-muted/30 p-4 sm:p-6">
           <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
@@ -118,48 +166,25 @@ export default function UserList() {
               <TableBody>
                 {filteredData.length > 0 ? (
                   filteredData.map((user, index) => (
-                    <TableRow
-                      key={user.id}
-                      className="hover:bg-muted/50 transition-colors"
-                    >
-                      <TableCell className="text-center text-sm font-medium text-foreground">
-                        {index + 1}
-                      </TableCell>
+                    <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="text-center">{index + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border border-primary/20 flex-shrink-0">
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-white font-semibold text-xs sm:text-sm">
+                          <Avatar>
+                            <AvatarFallback>
                               {user.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-semibold text-sm sm:text-base">
-                            {user.name}
-                          </span>
+                          <span>{user.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-medium text-sm sm:text-base">
-                        X
+                      <TableCell className="text-center font-medium">X</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary">{user.tipe_class}</Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary" className="px-3 py-1 text-xs sm:text-sm">
-                          {user.tipe_class}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center space-x-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </Button>
+                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-800">Edit</Button>
+                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">Delete</Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -176,5 +201,5 @@ export default function UserList() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

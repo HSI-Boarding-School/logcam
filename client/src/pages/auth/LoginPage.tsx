@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, AlertCircle } from "lucide-react";
-import useAuthStore from "../../../stores/useAuthStore";
+import useAuthStore from "@/stores/useAuthStore";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { isLoading, error, clearError, login } = useAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +18,7 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      await login({ email, password });
+      await login();
       navigate("/"); // Redirect after login succes
     } catch (err) {
       // Error already handled in store
