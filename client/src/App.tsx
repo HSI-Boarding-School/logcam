@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -15,6 +16,9 @@ import ReturnLaptop from "./pages/camera/return-laptop";
 import TakePhone from "./pages/camera/take-phone";
 import TakeLaptop from "./pages/camera/take-laptop";
 import ReturnPhone from "./pages/camera/return-phone";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -23,29 +27,32 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ReactQueryDevtools />
       <BrowserRouter>
         <Routes>
           {/* ✅ Routes with Sidebar & Topbar */}
           <Route
             path="/*"
             element={
-              <SidebarProvider>
-                <div className="min-h-screen flex w-full flex-col md:flex-row">
-                  <AppSidebar />
-                  <div className="flex-1 flex flex-col pb-16 md:pb-0">
-                    <TopBar />
-                    <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/attendance" element={<Attendance />} />
-                        <Route path="/user-list" element={<UserList />} />
-                        <Route path="/logbook" element={<Logbook />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </main>
+              <ProtectedRoute>
+                <SidebarProvider>
+                  <div className="min-h-screen flex w-full flex-col md:flex-row">
+                    <AppSidebar />
+                    <div className="flex-1 flex flex-col pb-16 md:pb-0">
+                      <TopBar />
+                      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/attendance" element={<Attendance />} />
+                          <Route path="/user-list" element={<UserList />} />
+                          <Route path="/logbook" element={<Logbook />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </main>
+                    </div>
                   </div>
-                </div>
-              </SidebarProvider>
+                </SidebarProvider>
+              </ProtectedRoute>
             }
           />
 
@@ -54,6 +61,10 @@ const App = () => (
           <Route path="/return-laptop" element={<ReturnLaptop />} />
           <Route path="/take-phone" element={<TakePhone />} />
           <Route path="/return-phone" element={<ReturnPhone />} />
+
+          {/* AUTH */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

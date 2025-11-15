@@ -5,16 +5,23 @@ import FloatingButton from "./FloatingButton";
 import BackButton from "./BackButton";
 import { resolveWsBase } from "@/lib/config";
 import * as faceapi from "face-api.js";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSaveFetection } from "@/hooks/useSaveDetection";
 
 interface DetectionResult {
   name?: string;
   status: string;
 }
 interface WebSocketResponse {
+  type?: "frame" | "result";
+  image?: string;
   results: DetectionResult[];
 }
 
 export default function OpenCVCameraComponent() {
+  const queryClient = useQueryClient();
+  const { mutate: saveDetection } = useSaveFetection();
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -30,6 +37,7 @@ export default function OpenCVCameraComponent() {
   const [isConnected, setIsConnected] = useState(false);
   const [results, setResults] = useState<DetectionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [frame, setFrame] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showBoundingBoxes, setShowBoundingBoxes] = useState(false);
 

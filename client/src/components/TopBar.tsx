@@ -2,8 +2,12 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import useAuthStore from "../../stores/useAuthStore";
+
 
 export function TopBar() {
+  const user = useAuthStore((state) => state.user)
+  console.log(user)
   return (
     <header className="h-16 sm:h-20 border-b-2 border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 sticky top-0 z-50">
       <div className="flex items-center gap-2 sm:gap-6">
@@ -24,12 +28,12 @@ export function TopBar() {
         
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l-2">
           <div className="text-right hidden sm:block">
-            <p className="text-xs sm:text-sm font-semibold">Admin User</p>
+            <p className="text-xs sm:text-sm font-semibold">{user.name}</p>
             <p className="text-[10px] sm:text-xs text-muted-foreground font-secondary">Administrator</p>
           </div>
           <Avatar className="h-9 w-9 sm:h-11 sm:w-11 border-2 border-primary/30">
             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold text-sm sm:text-lg">
-              AU
+              {user.name.substring(0, 2)}
             </AvatarFallback>
           </Avatar>
         </div>
