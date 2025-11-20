@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, Form, Query
+from fastapi import APIRouter, UploadFile, Depends, File, Form, Query
 from app.controllers.student_controller import StudentController
+from app.utils.auth import get_current_user
 from typing import Optional
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -13,20 +14,28 @@ async def register_user(
 ):
     return await StudentController.register_user(name, file, tipe_class, branch_id)
 
+def resolve_branch_id(current_user):
+    if current_user["role"].upper() == "ADMIN":
+        return None
+    
+    return current_user["branch_id"]
+
+@router.get("/all")
+def get_all_students(current_user = Depends(get_current_user)):
+    branch_id = resolve_branch_id(current_user)
+    return StudentController.get_all_students(branch_id=branch_id)
+
 
 @router.get("/all/log-laptop")
-def get_all_laptop_logs(branch_id: int = Query(None, description="Filter by branch ID")):
-    return StudentController.get_all_laptop_logs(branch_id)
+def get_all_laptop_logs(current_user = Depends(get_current_user)):
+    branch_id = resolve_branch_id(current_user)
+    return StudentController.get_all_laptop_logs(branch_id=branch_id)
 
 
 @router.get("/all/log-hp")
-def get_all_hp_logs(branch_id: int = Query(None, description="Filter by branch ID")):
-    return StudentController.get_all_hp_logs(branch_id)
-
-
-@router.get("/all")
-def get_all_students(branch_id: int = Query(None, description="Filter by branch ID")):
-    return StudentController.get_all_students(branch_id)
+def get_all_hp_logs(current_user = Depends(get_current_user)):
+    branch_id = resolve_branch_id(current_user)
+    return StudentController.get_all_hp_logs(branch_id=branch_id)
 
 
 @router.delete("/{student_id}")
@@ -52,5 +61,4 @@ async def update_student_route(
         branch_id=branch_id_int,
         file=file
     )
-
 
