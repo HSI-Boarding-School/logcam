@@ -9,7 +9,6 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { TopBar } from "@/components/TopBar";
 import Dashboard from "./pages/Dashboard";
 import Attendance from "./pages/Attendance";
-import UserList from "./pages/UserList";
 import Logbook from "./pages/Logbook";
 import NotFound from "./pages/NotFound";
 import ReturnLaptop from "./pages/camera/return-laptop";
@@ -18,6 +17,7 @@ import TakeLaptop from "./pages/camera/take-laptop";
 import ReturnPhone from "./pages/camera/return-phone";
 import LoginPage from "./pages/auth/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import StudentsList from "./pages/StudentsList";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +43,7 @@ const App = () => (
                         <Routes>
                           <Route path="/" element={<Dashboard />} />
                           <Route path="/attendance" element={<Attendance />} />
-                          <Route path="/user-list" element={<UserList />} />
+                          <Route path="/students-list" element={<StudentsList />} />
                           <Route path="/logbook" element={<Logbook />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
