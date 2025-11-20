@@ -10,17 +10,17 @@ export function useStudent(selectedBranch?: number) {
   return useQuery({
     queryKey: ['students', user?.role, user?.branch_id, selectedBranch],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/users/all`);
+      const res = await axios.get(`${API_BASE}/students/all`);
       const allData: Students[] = res.data.users;
 
-      console.log("Fetched users:", allData);
-      console.log("Current user:", user);
+      console.log("Fetched students:", allData);
+      console.log("Current users:", user);
 
-      if (user?.role === 'teacher') {
+      if (user?.role === 'TEACHER') {
         return allData.filter(s => s.branch_id === user.branch_id);
       }
 
-      if (user?.role === 'admin') {
+      if (user?.role === 'ADMIN') {
         return selectedBranch
           ? allData.filter(s => s.branch_id === Number(selectedBranch))
           : allData;

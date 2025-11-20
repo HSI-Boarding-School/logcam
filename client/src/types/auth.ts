@@ -12,12 +12,9 @@ export interface User {
   id: number;
   name: string;
   email?: string;
-  branch_id: number;
-  branch?: Branch;
   role?: string;
-  avatar?: string;
-  created_at?: string;
-  updated_at?: string;
+  branch_id: number;
+  branch_name: string;
 }
 
 export interface Students {
@@ -33,9 +30,10 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-  token: string;
+  message: string;
+  access_token: string;
+  token_type: string;
   user: User;
-  expires_in?: number;
 }
 
 export interface AuthState {

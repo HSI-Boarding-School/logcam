@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import axios from "axios"
 import { API_BASE } from "@/lib/config";
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -18,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import api from "@/lib/api";
 
 interface Logbook {
   id: number
@@ -44,9 +44,9 @@ export default function Logbook() {
     const fetchLogs = async () => {
       try {
         const [laptopRes, hpRes, usersRes] = await Promise.all([
-          axios.get(`${API_BASE}/users/all/log-laptop`),
-          axios.get(`${API_BASE}/users/all/log-hp`),
-          axios.get(`${API_BASE}/users/all`),
+          api.get(`${API_BASE}/students/all/log-laptop`),
+          api.get(`${API_BASE}/students/all/log-hp`),
+          api.get(`${API_BASE}/students/all`),
         ])
 
         const usersData = usersRes.data.users || usersRes.data

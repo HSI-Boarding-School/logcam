@@ -47,7 +47,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/users/all`);
+        const res = await axios.get(`${API_BASE}/students/all`);
         const countUser = res.data["users"];
         setTotalUser(countUser.length);
       } catch (err) {
@@ -61,8 +61,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchLogs = async () => {
       const [laptopRes, hpRes] = await Promise.all([
-        axios.get(`${API_BASE}/users/all/log-laptop`),
-        axios.get(`${API_BASE}/users/all/log-hp`),
+        axios.get(`${API_BASE}/students/all/log-laptop`),
+        axios.get(`${API_BASE}/students/all/log-hp`),
       ]);
 
       const laptopLogs = laptopRes.data["log-laptop"];

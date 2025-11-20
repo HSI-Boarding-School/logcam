@@ -18,29 +18,32 @@ const useAuthStore = create<AuthStore>()(
 
       // Actions
       login: async (credentials: LoginCredentials) => {
-        try {
-          // nanti ganti ini dengan API call ke backend
-          const res = {
-            access_token: "mock-access-token",
-            user: {
-              id: 1,
-              name: "Admin Demo",
-              email: "admin@gmail.com",
-              role: "admin",
-              branch_id: null,
-            },
-          };
+        set({ isLoading: true, error: null });
 
-          // Simpan token & user ke localStorage atau state
+        try {
+          const res = await authService.login(credentials);
+          console.log("RESPONSE LOGIN : ",res)
+
           localStorage.setItem("token", res.access_token);
           localStorage.setItem("user", JSON.stringify(res.user));
 
-          set({ user: res.user, isAuthenticated: true });
+          set({
+            user: res.user,
+            token: res.access_token,
+            branchId: res.user.branch_id,
+            isAuthenticated: true,
+            isLoading: false,
+          });
 
-          return true; // tanda login sukses
+          return true;
         } catch (err) {
-          console.error(err);
-          return false;
+          set({
+            error: "Email atau password salah",
+            isLoading: false,
+            isAuthenticated: false,
+          });
+
+          return false
         }
       },
 
