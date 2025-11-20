@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
+import useAuthStore from "@/stores/useAuthStore";
 export interface Logbook {
   id: number;
   user_id: number;
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [borrowedLaptopCount, setBorrowedLaptopCount] = useState<number>(0);
   const [borrowedHPCount, setBorrowedHPCount] = useState<number>(0);
   const [logsCount, setLogsCount] = useState<number>(0);
+  const { branchId } = useAuthStore.getState();
 
   function convertToWIB(datetimeStr: string) {
     const utcDate = new Date(datetimeStr.replace(" ", "T") + "Z");
@@ -47,7 +49,9 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/students/all`);
+        const res = await axios.get(
+          `${API_BASE}/students/all?branch_id=${branchId}`
+        );
         const countUser = res.data["users"];
         setTotalUser(countUser.length);
       } catch (err) {
@@ -61,8 +65,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchLogs = async () => {
       const [laptopRes, hpRes] = await Promise.all([
-        axios.get(`${API_BASE}/students/all/log-laptop`),
-        axios.get(`${API_BASE}/students/all/log-hp`),
+        api.get(`${API_BASE}/students/all/log-laptop?branch_id=${branchId}`),
+        api.get(`${API_BASE}/students/all/log-hp?branch_id=${branchId}`),
       ]);
 
       const laptopLogs = laptopRes.data["log-laptop"];
