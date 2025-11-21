@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from uuid import UUID
 
 
 class UserCreate(BaseModel):
@@ -7,7 +8,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     branch_id: Optional[int] = None
-    role_id: Optional[int] = None
+    role_id: Optional[UUID] = None
 
 
 class UserUpdate(BaseModel):
@@ -15,5 +16,5 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     branch_id: Optional[int] = None
-    role_id: Optional[int] = None
+    role_id: Optional[UUID] = None
     is_active: Optional[bool] = None
