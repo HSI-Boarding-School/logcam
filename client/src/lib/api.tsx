@@ -24,7 +24,9 @@ api.interceptors.request.use(
     if (authStorageString) {
       try {
         const authStorage: AuthStorage = JSON.parse(authStorageString);
-        const { token, branchId } = authStorage.state;
+        const { branchId } = authStorage.state;
+
+        const token = localStorage.getItem('token')
         
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;

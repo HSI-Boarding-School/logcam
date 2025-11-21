@@ -22,22 +22,18 @@ function getCurrentUser() {
   }
 }
 
-export default function UserList() {
+export default function StudentsList() {
   const { data: users, isLoading, isError } = useStudent()
   const [selectedClass, setSelectedClass] = useState("")
   const [selectedBranch, setSelectedBranch] = useState("")
 
   // Get current user and check role
   const currentUser = getCurrentUser()
-  const isAdmin = currentUser?.role === 'admin'
+  const isAdmin = currentUser?.role === 'ADMIN'
   
   console.log('👤 Current user:', currentUser)
   console.log('🔑 Is admin?', isAdmin)
 
-  // === DEBUGGING: CHECK DATA ===
-  console.log('🔍 DEBUG INFO:')
-  console.log('isLoading:', isLoading)
-  console.log('isError:', isError)
   console.log('users:', users)
   console.log('users type:', typeof users)
   console.log('users is array?', Array.isArray(users))
@@ -96,7 +92,7 @@ export default function UserList() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
-            <span className="text-gradient-primary">Users</span> List
+            <span className="text-gradient-primary">Students</span> List
           </h2>
           <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-secondary mt-2">
             View all students and their class information

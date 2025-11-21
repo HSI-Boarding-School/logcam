@@ -1,15 +1,14 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
+import { useEffect, useState } from "react";
 import { API_BASE } from "@/lib/config";
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -17,85 +16,86 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import api from "@/lib/api";
+import useAuthStore from "@/stores/useAuthStore";
 
 interface Logbook {
-  id: number
-  name: string
-  tipe: string
-  mengambil: string
-  mengembalikan: string
-  created_at: string
-  user_id: number
-  kelas?: string
-  date?: string
-  time?: string
+  id: number;
+  name: string;
+  tipe: string;
+  mengambil: string;
+  mengembalikan: string;
+  created_at: string;
+  user_id: number;
+  kelas?: string;
+  date?: string;
+  time?: string;
 }
 
 export default function Logbook() {
-  const [logs, setLogs] = useState<Logbook[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDevice, setSelectedDevice] = useState("all")
-  const [selectedAction, setSelectedAction] = useState("all")
-  const [search, setSearch] = useState("")
+  const [logs, setLogs] = useState<Logbook[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDevice, setSelectedDevice] = useState("all");
+  const [selectedAction, setSelectedAction] = useState("all");
+  const [search, setSearch] = useState("");
+  const { branchId } = useAuthStore.getState();
 
   // 🔹 Fetch all logs (laptop + hp + users)
   useEffect(() => {
     const fetchLogs = async () => {
       try {
         const [laptopRes, hpRes, usersRes] = await Promise.all([
-          axios.get(`${API_BASE}/users/all/log-laptop`),
-          axios.get(`${API_BASE}/users/all/log-hp`),
-          axios.get(`${API_BASE}/users/all`),
-        ])
+          api.get(`${API_BASE}/students/all/log-laptop?branch_id=${branchId}`),
+          api.get(`${API_BASE}/students/all/log-hp?branch_id=${branchId}`),
+          api.get(`${API_BASE}/students/all?branch_id=${branchId}`),
+        ]);
 
-        const usersData = usersRes.data.users || usersRes.data
-        const laptopLogs = laptopRes.data["log-laptop"]
-        const hpLogs = hpRes.data["log-hp"]
+        const usersData = usersRes.data.users || usersRes.data;
+        const laptopLogs = laptopRes.data["log-laptop"];
+        const hpLogs = hpRes.data["log-hp"];
 
         const merged = [...laptopLogs, ...hpLogs].map((log: Logbook) => {
-          const user = usersData.find((u: any) => u.id === log.user_id)
-          const kelas = user ? user.kelas || user.tipe_class || "-" : "-"
+          const user = usersData.find((u: any) => u.id === log.user_id);
+          const kelas = user ? user.kelas || user.tipe_class || "-" : "-";
 
-          const createdAt = new Date(log.created_at.replace(" ", "T") + "Z")
-          const dateStr = createdAt.toLocaleDateString("id-ID")
+          const createdAt = new Date(log.created_at.replace(" ", "T") + "Z");
+          const dateStr = createdAt.toLocaleDateString("id-ID");
           const timeStr = createdAt.toLocaleTimeString("id-ID", {
             hour: "2-digit",
             minute: "2-digit",
-          })
+          });
 
           return {
             ...log,
             kelas,
             date: dateStr,
             time: timeStr,
-          }
-        })
+          };
+        });
 
-        setLogs(merged)
+        setLogs(merged);
       } catch (err) {
-        console.error("Failed to fetch logs:", err)
+        console.error("Failed to fetch logs:", err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchLogs()
-  }, [])
+    fetchLogs();
+  }, []);
 
   // 🔹 Filter logs
   const filteredLogs = logs.filter((log) => {
     const matchesDevice =
-      selectedDevice === "all" || log.tipe.toLowerCase() === selectedDevice
+      selectedDevice === "all" || log.tipe.toLowerCase() === selectedDevice;
     const matchesAction =
       selectedAction === "all" ||
       (selectedAction === "borrowed" && log.mengambil === "SUDAH") ||
-      (selectedAction === "returned" && log.mengembalikan === "SUDAH")
-    const matchesSearch = log.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
-    return matchesDevice && matchesAction && matchesSearch
-  })
+      (selectedAction === "returned" && log.mengembalikan === "SUDAH");
+    const matchesSearch = log.name.toLowerCase().includes(search.toLowerCase());
+    return matchesDevice && matchesAction && matchesSearch;
+  });
 
   // 🔹 Loading state
   if (loading) {
@@ -103,7 +103,7 @@ export default function Logbook() {
       <div className="flex items-center justify-center h-screen text-muted-foreground animate-pulse">
         Loading logbook data...
       </div>
-    )
+    );
   }
 
   // 🔹 UI Modern Table
@@ -167,9 +167,7 @@ export default function Logbook() {
                   <TableRow key={log.id}>
                     <TableCell>{log.date}</TableCell>
                     <TableCell>{log.name}</TableCell>
-                    <TableCell className="capitalize">
-                      {log.tipe}
-                    </TableCell>
+                    <TableCell className="capitalize">{log.tipe}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -202,5 +200,5 @@ export default function Logbook() {
         </div>
       </div>
     </div>
-  )
+  );
 }

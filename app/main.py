@@ -32,4 +32,6 @@ app.on_event("shutdown")(shutdown_event)
 
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz():
-    return "ok"
+
+    return {"status": "ok"}
+

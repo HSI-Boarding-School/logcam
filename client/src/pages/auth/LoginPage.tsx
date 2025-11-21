@@ -18,8 +18,10 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      await login();
-      navigate("/"); // Redirect after login succes
+      const succes = await login({ email, password });
+      if (succes) {
+        navigate("/");
+      } // Redirect after login succes
     } catch (err) {
       // Error already handled in store
       console.error("Login failed:", err);
