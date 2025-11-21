@@ -15,7 +15,7 @@ import {
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Attendance", url: "/attendance", icon: Clock },
-  { title: "Users List", url: "/user-list", icon: Users },
+  { title: "Students List", url: "/students-list", icon: Users },
   { title: "Logbook", url: "/logbook", icon: BookOpen },
 ];
 
