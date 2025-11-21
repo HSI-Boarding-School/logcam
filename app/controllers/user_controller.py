@@ -1,85 +1,181 @@
 from fastapi import HTTPException
-from datetime import datetime, timedelta
-from jose import jwt
+from datetime import datetime
 from sqlalchemy.orm import Session
-from app.models import User, UserRole, Role, Branch
 from app.database import SessionLocal
-from pydantic import BaseModel
+from app.models import User, UserRole, Role
 import bcrypt
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecretkey")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 2880  # token expires in 2 days
 
 
-class LoginRequest(BaseModel):
-    email: str
-    password: str
+def hash_password(password: str):
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def verify_password(plain_password: str, hashed_password: str):
-    try:
-        hashed_bytes = hashed_password.encode("utf-8")
-        password_bytes = plain_password.encode("utf-8")
-        return bcrypt.checkpw(password_bytes, hashed_bytes)
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid password hash format or not verifiable."
-        )
-
-
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def login_user(request: LoginRequest):
+# =========================
+# CREATE USER
+# =========================
+def create_user(data):
     db: Session = SessionLocal()
+
     try:
-        user = db.query(User).filter(User.email == request.email).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="Email is not registered")
+        # Cek email unik
+        existing = db.query(User).filter(User.email == data.email).first()
+        if existing:
+            raise HTTPException(400, "Email already registered")
 
-        if not verify_password(request.password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Incorrect password")
+        hashed_pw = hash_password(data.password)
 
-        user_role = (
-            db.query(Role.name)
-            .join(UserRole, Role.id == UserRole.role_id)
-            .filter(UserRole.user_id == user.id)
-            .first()
+        new_user = User(
+            name=data.name,
+            email=data.email,
+            password_hash=hashed_pw,
+            branch_id=data.branch_id,
         )
 
-        if not user_role:
-            raise HTTPException(status_code=403, detail="User does not have any role assigned")
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-        if user_role.name.upper() == "STUDENT":
-            raise HTTPException(status_code=403, detail="Access denied: only ADMIN and TEACHER can login")
-
-        branch_name = user.branch.name if user.branch else None
-
-        access_token = create_access_token({"sub": str(user.id), "role": user_role.name})
+        # Assign Role
+        if data.role_id:
+            role_link = UserRole(
+                user_id=new_user.id,
+                role_id=data.role_id
+            )
+            db.add(role_link)
+            db.commit()
 
         return {
-            "message": "Login success",
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "id": str(user.id),
-                "name": user.name,
-                "email": user.email,
-                "role": user_role.name,
-                "branch_id": user.branch_id if user.branch else None,
-                "branch_name": branch_name,
-            },
+            "message": "User created successfully",
+            "user_id": str(new_user.id)
         }
+
+    finally:
+        db.close()
+
+
+# =========================
+# GET ALL USERS
+# =========================
+def get_users():
+    db: Session = SessionLocal()
+    try:
+        users = (
+            db.query(User)
+            .filter(User.deleted_at == None)
+            .all()
+        )
+
+        result = []
+        for u in users:
+            role = (
+                db.query(Role.name)
+                .join(UserRole, Role.id == UserRole.role_id)
+                .filter(UserRole.user_id == u.id)
+                .first()
+            )
+
+            result.append({
+                "id": str(u.id),
+                "name": u.name,
+                "email": u.email,
+                "branch_id": u.branch_id,
+                "is_active": u.is_active,
+                "role": role.name if role else None,
+            })
+
+        return result
+
+    finally:
+        db.close()
+
+
+# =========================
+# GET USER BY ID
+# =========================
+def get_user_by_id(user_id: str):
+    db: Session = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+        if not user:
+            raise HTTPException(404, "User not found")
+
+        return {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "branch_id": user.branch_id,
+            "is_active": user.is_active,
+            "created_at": user.created_at,
+        }
+
+    finally:
+        db.close()
+
+
+# =========================
+# UPDATE USER
+# =========================
+def update_user(user_id: str, data):
+    db: Session = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+        if not user:
+            raise HTTPException(404, "User not found")
+
+        # Cek email unik
+        if data.email and data.email != user.email:
+            exist = db.query(User).filter(User.email == data.email).first()
+            if exist:
+                raise HTTPException(400, "Email already in use")
+
+        if data.name:
+            user.name = data.name
+
+        if data.email:
+            user.email = data.email
+
+        if data.password:
+            user.password_hash = hash_password(data.password)
+
+        if data.branch_id is not None:
+            user.branch_id = data.branch_id
+
+        if data.is_active is not None:
+            user.is_active = data.is_active
+
+        # Update Role jika ada
+        if data.role_id:
+            db.query(UserRole).filter(UserRole.user_id == user.id).delete()
+            db.commit()
+
+            new_role = UserRole(
+                user_id=user.id,
+                role_id=data.role_id
+            )
+            db.add(new_role)
+
+        db.commit()
+        return {"message": "User updated successfully"}
+
+    finally:
+        db.close()
+
+
+# =========================
+# DELETE USER (SOFT DELETE)
+# =========================
+def delete_user(user_id: str):
+    db: Session = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
+        if not user:
+            raise HTTPException(404, "User not found")
+
+        user.deleted_at = datetime.utcnow()
+
+        db.commit()
+
+        return {"message": "User deleted successfully"}
 
     finally:
         db.close()
