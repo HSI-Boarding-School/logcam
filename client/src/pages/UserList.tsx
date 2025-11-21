@@ -29,15 +29,11 @@ export default function UserList() {
 
   // Get current user and check role
   const currentUser = getCurrentUser()
-  const isAdmin = currentUser?.role === 'admin'
+  const isAdmin = currentUser?.role === 'ADMIN'
   
   console.log('👤 Current user:', currentUser)
   console.log('🔑 Is admin?', isAdmin)
 
-  // === DEBUGGING: CHECK DATA ===
-  console.log('🔍 DEBUG INFO:')
-  console.log('isLoading:', isLoading)
-  console.log('isError:', isError)
   console.log('users:', users)
   console.log('users type:', typeof users)
   console.log('users is array?', Array.isArray(users))

@@ -35,4 +35,4 @@ app.add_middleware(AdminMiddleware)
 
 @app.get("/healthz", response_class=PlainTextResponse, tags=["Health"])
 def healthz():
-    return "ok"
+    return {"status": "ok"}
