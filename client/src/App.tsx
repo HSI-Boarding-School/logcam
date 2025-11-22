@@ -17,9 +17,9 @@ import TakeLaptop from "./pages/camera/take-laptop";
 import ReturnPhone from "./pages/camera/return-phone";
 import LoginPage from "./pages/auth/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import StudentsList from "./pages/StudentsList";
-
-const queryClient = new QueryClient();
+import StudentsList from "./pages/StudentsList";  
+import { queryClient } from "@/lib/queryClient";
+import UserManagement from "./pages/UserManagement";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -43,7 +43,11 @@ const App = () => (
                         <Routes>
                           <Route path="/" element={<Dashboard />} />
                           <Route path="/attendance" element={<Attendance />} />
-                          <Route path="/students-list" element={<StudentsList />} />
+                          <Route
+                            path="/students-list"
+                            element={<StudentsList />}
+                          />
+                          <Route path="/user-management" element={<UserManagement />} />
                           <Route path="/logbook" element={<Logbook />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
