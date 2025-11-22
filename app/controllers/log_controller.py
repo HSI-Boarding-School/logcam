@@ -1,13 +1,16 @@
-from fastapi import WebSocket, WebSocketDisconnect
+# app/controllers/log_controller.py  (update your file path accordingly)
+from fastapi import WebSocket, WebSocketDisconnect, HTTPException
 from app.database import SessionLocal
 from app.models import Student, LogBook
 from app.services.face_service import compare_faces
+from app.utils.auth import decode_token_get_user
+from app.utils.cache_utils import get_students_by_branch, seed_students_cache
+from app.utils.redis_client import get_redis
 from datetime import datetime, date
 import cv2, base64, json, numpy as np
-
+import asyncio
 
 def b64_to_cv2_img(b64str: str):
-    """Convert a base64 string into an OpenCV image."""
     header, data = b64str.split(",", 1) if "," in b64str else (None, b64str)
     img_bytes = base64.b64decode(data)
     np_arr = np.frombuffer(img_bytes, np.uint8)
@@ -15,15 +18,50 @@ def b64_to_cv2_img(b64str: str):
 
 
 async def process_log(websocket: WebSocket, tipe: str):
-    """Perform face detection and record log entries."""
-    db = SessionLocal()
-    students = db.query(Student).all()
-    known_encodings = [np.array(s.face_embedding) for s in students if s.face_embedding]
-    known_students = [s for s in students if s.face_embedding]
+
+    auth_header = None
+    for k, v in websocket.headers:
+        if k.decode().lower() == "authorization":
+            auth_header = v.decode()
+            break
+    if auth_header is None:
+        auth_header = websocket.headers.get("authorization")
+
+    if not auth_header:
+        await websocket.close(code=1008)
+        return
+
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        await websocket.close(code=1008)
+        return
+
+    token = parts[1]
+
+    try:
+        current_user = decode_token_get_user(token)
+    except HTTPException as e:
+        await websocket.close(code=1008)
+        return
+
+    branch_id = None if (current_user["role"] and current_user["role"].upper() == "ADMIN") else current_user["branch_id"]
+
+    try:
+        students = await get_students_by_branch(branch_id)
+    except Exception:
+        await seed_students_cache()
+        students = await get_students_by_branch(branch_id)
+
+    known_encodings = []
+    known_students = []
+    for s in students:
+        emb = s.get("face_embedding")
+        if emb:
+            known_encodings.append(np.array(emb, dtype=np.float64))
+            known_students.append(s)
 
     try:
         while True:
-
             data = await websocket.receive_text()
             payload = json.loads(data)
             frame_b64 = payload.get("frame")
@@ -33,44 +71,51 @@ async def process_log(websocket: WebSocket, tipe: str):
             small = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
             rgb_small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
 
-            # Lazy import of face_recognition at usage time
-            import face_recognition  # type: ignore
+            import face_recognition 
             face_encs = face_recognition.face_encodings(rgb_small)
             results_list = []
 
             for enc in face_encs:
+                if len(known_encodings) == 0:
+                    results_list.append({"name": "Unknown Face", "status": "NOT_FOUND"})
+                    continue
+
                 results, dists = compare_faces(known_encodings, enc)
                 name, status = "Unknown Face", "NOT_FOUND"
 
                 if True in results:
                     idx = int(np.argmin(dists))
                     student = known_students[idx]
-                    name = student.name
+                    name = student.get("name")
 
-                    today = date.today()
-                    start_dt = datetime(today.year, today.month, today.day)
+                    db = SessionLocal()
+                    try:
+                        today = date.today()
+                        start_dt = datetime(today.year, today.month, today.day)
+                        log = db.query(LogBook).filter(
+                            LogBook.student_id == student.get("id"),
+                            LogBook.tipe == tipe,
+                            LogBook.created_at >= start_dt
+                        ).first()
 
-                    log = db.query(LogBook).filter(
-                        LogBook.student_id == student.id,
-                        LogBook.tipe == tipe,
-                        LogBook.created_at >= start_dt
-                    ).first()
+                        if not log:
+                            log = LogBook(student_id=student.get("id"), tipe=tipe)
+                            db.add(log)
 
-                    if not log:
-                        log = LogBook(student_id=student.id, tipe=tipe)
-                        db.add(log)
+                        changed = False
+                        if action == "mengambil" and log.mengambil != "SUDAH":
+                            log.mengambil = "SUDAH"
+                            changed = True
+                        elif action == "mengembalikan" and log.mengembalikan != "SUDAH":
+                            log.mengembalikan = "SUDAH"
+                            changed = True
 
-                    changed = False
-                    if action == "mengambil" and log.mengambil != "SUDAH":
-                        log.mengambil = "SUDAH"
-                        changed = True
-                    elif action == "mengembalikan" and log.mengembalikan != "SUDAH":
-                        log.mengembalikan = "SUDAH"
-                        changed = True
+                        if changed:
+                            db.commit()
+                        status = f"{action.upper()}_SUCCESS"
 
-                    if changed:
-                        db.commit()
-                    status = f"{action.upper()}_SUCCESS"
+                    finally:
+                        db.close()
 
                 results_list.append({"name": name, "status": status})
 
@@ -78,5 +123,7 @@ async def process_log(websocket: WebSocket, tipe: str):
 
     except WebSocketDisconnect:
         print("❌ Client disconnected")
+    except Exception as e:
+        print("Error in process_log:", e)
     finally:
-        db.close()
+        return
