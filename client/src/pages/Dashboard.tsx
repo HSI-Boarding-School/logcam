@@ -49,7 +49,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await axios.get(
+        const res = await api.get(
           `${API_BASE}/students/all?branch_id=${branchId}`
         );
         const countUser = res.data["users"];
