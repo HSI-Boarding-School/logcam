@@ -15,7 +15,9 @@ class AdminMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         db = SessionLocal()
         try:
-            
+            if request.method == "OPTIONS":
+                return await call_next(request)
+                
             public_paths = ["/auth/login", "/students/all", "/students/all/log-hp", "/students/all/log-laptop", "/docs", "/api/openapi.json"]
             if any(request.url.path.startswith(p) for p in public_paths):
                 return await call_next(request)
