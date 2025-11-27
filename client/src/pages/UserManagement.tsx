@@ -30,18 +30,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Users, Search, Trash2, UserCog, Crown, GraduationCap, Loader2, RefreshCw } from "lucide-react";
+import {
+  Users,
+  Search,
+  Trash2,
+  UserCog,
+  Crown,
+  GraduationCap,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserProfile, UserRole } from "@/types/users";
 import { useUsers } from "@/hooks/user/useUsers";
 import { useDeleteUserById } from "@/hooks/user/useDeleteUser";
+import { EditUserDialog } from "@/components/EditUserDialog";
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [editUser, setEditUser] = useState<UserProfile | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
-  
+
   const {
     data: users = [],
     isLoading,
@@ -49,10 +61,9 @@ export default function UserManagement() {
     error,
     refetch,
     isFetching,
-  } = useUsers()
+  } = useUsers();
 
-
-  const deleteMutation = useDeleteUserById()
+  const deleteMutation = useDeleteUserById();
 
   // ==========================================
   // FILTER LOGIC (Client-side)
@@ -87,11 +98,8 @@ export default function UserManagement() {
   };
 
   const handleEditUser = (user: UserProfile) => {
-    // TODO: Implement edit modal or navigate to edit page
-    toast({
-      title: "Edit User",
-      description: `Editing user: ${user.email}`,
-    });
+    setEditUser(user);
+    setIsEditDialogOpen(true);
   };
 
   // ==========================================
@@ -140,7 +148,7 @@ export default function UserManagement() {
     () => ({
       total: users.length,
       admins: users.filter((u) => u.role?.includes("ADMIN")).length,
-      teachers: users.filter((u) => u.role?.includes("TEACHER")).length
+      teachers: users.filter((u) => u.role?.includes("TEACHER")).length,
     }),
     [users]
   );
@@ -205,7 +213,9 @@ export default function UserManagement() {
           onClick={() => refetch()}
           disabled={isFetching}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
@@ -350,22 +360,23 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
-              
-                            <Badge
-                              key={user.id}
-                              variant={getRoleBadgeVariant(user.role as UserRole)}
-                              className="font-semibold text-xs flex items-center gap-1"
-                            >
-                              {getRoleIcon(user.role as UserRole)}
-                              {user.role}
-                            </Badge>
+                          <Badge
+                            key={user.id}
+                            variant={getRoleBadgeVariant(user.role as UserRole)}
+                            className="font-semibold text-xs flex items-center gap-1"
+                          >
+                            {getRoleIcon(user.role as UserRole)}
+                            {user.role}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell className="font-secondary text-muted-foreground text-sm">
                         Branch {user.branch_id}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                        <Badge
+                          variant={user.is_active ? "default" : "secondary"}
+                        >
                           {user.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
@@ -440,6 +451,15 @@ export default function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditUserDialog
+        user={editUser}
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setEditUser(null);
+        }}
+      />
     </div>
   );
 }
