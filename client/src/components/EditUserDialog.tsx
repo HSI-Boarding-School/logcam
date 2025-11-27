@@ -39,6 +39,14 @@ interface EditUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+type EditUserFormValues = {
+  name: string;
+  email: string;
+  is_active: boolean;
+  branch_id: number;
+  role: string;
+};
+
 export function EditUserDialog({
   user,
   open,
@@ -48,7 +56,7 @@ export function EditUserDialog({
   const updateMutation = useUpdateUser();
 
   // setup form with rhf and zod validator
-  const form = useForm<EditUserFormData>({
+  const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
     defaultValues: {
       name: "",
@@ -71,7 +79,7 @@ export function EditUserDialog({
     }
   }, [user, form]);
 
-  const onSubmit = (data: EditUserDialogProps) => {
+  const onSubmit = (data: EditUserFormValues) => {
     if (!user) return;
 
     updateMutation.mutate(

@@ -122,8 +122,6 @@ export default function UserManagement() {
         return <Crown className="h-3 w-3" />;
       case "TEACHER":
         return <GraduationCap className="h-3 w-3" />;
-      case "STUDENT":
-        return <Users className="h-3 w-3" />;
       default:
         return <Users className="h-3 w-3" />;
     }
