@@ -1,4 +1,4 @@
-export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || "/api";
+export const API_BASE: string = import.meta.env.VITE_API_BASE || "/api";
 
 export function resolveWsBase(): string {
   const wsEnv = (import.meta as any).env?.VITE_WS_BASE as string | undefined;
@@ -10,3 +10,5 @@ export function resolveWsBase(): string {
   }
   return "ws://localhost:3000"; // SSR fallback (unused in our case)
 }
+
+console.log("ENVIROMENT", import.meta.env.VITE_API_BASE);

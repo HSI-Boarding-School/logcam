@@ -30,18 +30,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Users, Search, Trash2, UserCog, Crown, GraduationCap, Loader2, RefreshCw } from "lucide-react";
+import {
+  Users,
+  Search,
+  Trash2,
+  UserCog,
+  Crown,
+  GraduationCap,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { fetchUsers, deleteUser, updateUserProfile } from "@/api/users.mock";
 import type { UserProfile, UserRole } from "@/types/users";
+import { useUsers } from "@/hooks/user/useUsers";
+import { useDeleteUserById } from "@/hooks/user/useDeleteUser";
+import { EditUserDialog } from "@/components/EditUserDialog";
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [editUser, setEditUser] = useState<UserProfile | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
+
   const {
     data: users = [],
     isLoading,
@@ -49,53 +61,9 @@ export default function UserManagement() {
     error,
     refetch,
     isFetching,
-  } = useQuery<UserProfile[]>({
-    queryKey: ["users"],
-    queryFn: fetchUsers,
-    staleTime: 5 * 60 * 1000, // 5 menit
-    refetchOnWindowFocus: true,
-  });
+  } = useUsers();
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteUser,
-    onMutate: async (userId) => {
-      // Cancel outgoing queries
-      await queryClient.cancelQueries({ queryKey: ["users"] });
-
-      // Snapshot previous value
-      const previousUsers = queryClient.getQueryData<UserProfile[]>(["users"]);
-
-      // Optimistically update
-      queryClient.setQueryData<UserProfile[]>(["users"], (old = []) =>
-        old.filter((user) => user.id !== userId)
-      );
-
-      return { previousUsers };
-    },
-    onError: (error, userId, context) => {
-      // Rollback on error
-      if (context?.previousUsers) {
-        queryClient.setQueryData(["users"], context.previousUsers);
-      }
-
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete user",
-        variant: "destructive",
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-      setDeleteUserId(null);
-    },
-    onSettled: () => {
-      // Refetch to ensure sync
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-  });
+  const deleteMutation = useDeleteUserById();
 
   // ==========================================
   // FILTER LOGIC (Client-side)
@@ -115,7 +83,7 @@ export default function UserManagement() {
     // Role filter
     if (roleFilter !== "all") {
       filtered = filtered.filter((user) =>
-        user.roles?.includes(roleFilter as UserRole)
+        user.role?.includes(roleFilter as UserRole)
       );
     }
 
@@ -130,11 +98,8 @@ export default function UserManagement() {
   };
 
   const handleEditUser = (user: UserProfile) => {
-    // TODO: Implement edit modal or navigate to edit page
-    toast({
-      title: "Edit User",
-      description: `Editing user: ${user.email}`,
-    });
+    setEditUser(user);
+    setIsEditDialogOpen(true);
   };
 
   // ==========================================
@@ -146,8 +111,6 @@ export default function UserManagement() {
         return "default";
       case "TEACHER":
         return "secondary";
-      case "STUDENT":
-        return "outline";
       default:
         return "outline";
     }
@@ -159,8 +122,6 @@ export default function UserManagement() {
         return <Crown className="h-3 w-3" />;
       case "TEACHER":
         return <GraduationCap className="h-3 w-3" />;
-      case "STUDENT":
-        return <Users className="h-3 w-3" />;
       default:
         return <Users className="h-3 w-3" />;
     }
@@ -184,9 +145,8 @@ export default function UserManagement() {
   const stats = useMemo(
     () => ({
       total: users.length,
-      admins: users.filter((u) => u.roles?.includes("ADMIN")).length,
-      teachers: users.filter((u) => u.roles?.includes("TEACHER")).length,
-      students: users.filter((u) => u.roles?.includes("STUDENT")).length,
+      admins: users.filter((u) => u.role?.includes("ADMIN")).length,
+      teachers: users.filter((u) => u.role?.includes("TEACHER")).length,
     }),
     [users]
   );
@@ -251,13 +211,15 @@ export default function UserManagement() {
           onClick={() => refetch()}
           disabled={isFetching}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="border-2 card-hover-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -305,22 +267,6 @@ export default function UserManagement() {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-2 card-hover-lift">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-secondary">
-                  Students
-                </p>
-                <p className="text-2xl font-bold text-gradient-accent">
-                  {stats.students}
-                </p>
-              </div>
-              <Users className="h-8 w-8 text-accent opacity-20" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters */}
@@ -344,7 +290,6 @@ export default function UserManagement() {
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="ADMIN">Admins</SelectItem>
                 <SelectItem value="TEACHER">Teachers</SelectItem>
-                <SelectItem value="STUDENT">Students</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -385,9 +330,6 @@ export default function UserManagement() {
                       Status
                     </TableHead>
                     <TableHead className="font-bold text-foreground">
-                      Joined
-                    </TableHead>
-                    <TableHead className="font-bold text-foreground text-right">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -416,31 +358,28 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
-                          {user.roles?.map((role) => (
-                            <Badge
-                              key={role}
-                              variant={getRoleBadgeVariant(role as UserRole)}
-                              className="font-semibold text-xs flex items-center gap-1"
-                            >
-                              {getRoleIcon(role as UserRole)}
-                              {role}
-                            </Badge>
-                          ))}
+                          <Badge
+                            key={user.id}
+                            variant={getRoleBadgeVariant(user.role as UserRole)}
+                            className="font-semibold text-xs flex items-center gap-1"
+                          >
+                            {getRoleIcon(user.role as UserRole)}
+                            {user.role}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell className="font-secondary text-muted-foreground text-sm">
                         Branch {user.branch_id}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                        <Badge
+                          variant={user.is_active ? "default" : "secondary"}
+                        >
                           {user.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-secondary text-muted-foreground text-sm">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -510,6 +449,15 @@ export default function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditUserDialog
+        user={editUser}
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setEditUser(null);
+        }}
+      />
     </div>
   );
 }
