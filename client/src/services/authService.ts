@@ -4,10 +4,7 @@ import type { LoginCredentials, LoginResponse, Students } from "@/types/auth";
 
 const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response = await api.post<LoginResponse>(
-      "/auth/login",
-      credentials
-    );
+    const response = await api.post<LoginResponse>("/auth/login", credentials);
     return response.data;
   },
 
@@ -17,7 +14,7 @@ const authService = {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.clear()
+      localStorage.clear();
     }
   },
 

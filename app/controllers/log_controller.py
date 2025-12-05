@@ -18,25 +18,29 @@ def b64_to_cv2_img(b64str: str):
 
 
 async def process_log(websocket: WebSocket, tipe: str):
+    # Try to get token from query parameter first (for browser WebSocket)
+    token = websocket.query_params.get("token")
+    
+    # Fallback to Authorization header
+    if not token:
+        auth_header = None
+        for k, v in websocket.headers.items():
+            if k.lower() == "authorization":
+                auth_header = v
+                break
+        if auth_header is None:
+            auth_header = websocket.headers.get("authorization")
 
-    auth_header = None
-    for k, v in websocket.headers:
-        if k.decode().lower() == "authorization":
-            auth_header = v.decode()
-            break
-    if auth_header is None:
-        auth_header = websocket.headers.get("authorization")
+        if not auth_header:
+            await websocket.close(code=1008)
+            return
 
-    if not auth_header:
-        await websocket.close(code=1008)
-        return
+        parts = auth_header.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            await websocket.close(code=1008)
+            return
 
-    parts = auth_header.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        await websocket.close(code=1008)
-        return
-
-    token = parts[1]
+        token = parts[1]
 
     try:
         current_user = decode_token_get_user(token)

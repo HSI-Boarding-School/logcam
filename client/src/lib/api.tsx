@@ -1,11 +1,11 @@
 // lib/axios.ts
-import axios, { InternalAxiosRequestConfig } from 'axios';
+import axios, { InternalAxiosRequestConfig } from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE || "http://localhost:8000",
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -19,24 +19,24 @@ interface AuthStorage {
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const authStorageString = localStorage.getItem('auth-storage');
-    
+    const authStorageString = localStorage.getItem("auth-storage");
+
     if (authStorageString) {
       try {
         const authStorage: AuthStorage = JSON.parse(authStorageString);
         const { branchId } = authStorage.state;
 
-        const token = localStorage.getItem('token')
-        
+        const token = localStorage.getItem("token");
+
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         if (branchId && config.headers) {
-          config.headers['X-Branch-ID'] = branchId.toString();
+          config.headers["X-Branch-ID"] = branchId.toString();
         }
       } catch (error) {
-        console.error('Error parsing auth storage:', error);
+        console.error("Error parsing auth storage:", error);
       }
     }
 
@@ -54,18 +54,18 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Jangan redirect kalau error dari login endpoint
-    const isLoginRequest = originalRequest?.url?.includes('/auth/login');
-    
+    const isLoginRequest = originalRequest?.url?.includes("/auth/login");
+
     if (
-      error.response?.status === 401 && 
+      error.response?.status === 401 &&
       !originalRequest._retry &&
-      !isLoginRequest  // ← PENTING: Exclude login
+      !isLoginRequest // ← PENTING: Exclude login
     ) {
       originalRequest._retry = true;
 
       // Clear auth & redirect ke login
-      localStorage.removeItem('auth-storage');
-      window.location.href = '/login';
+      localStorage.removeItem("auth-storage");
+      window.location.href = "/login";
     }
 
     return Promise.reject(error);

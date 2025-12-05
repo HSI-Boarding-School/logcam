@@ -153,31 +153,37 @@ export default function OpenCVCameraComponent() {
     const isBrowser = typeof window !== "undefined";
     const path = isBrowser ? window.location.pathname : "/";
     const base = resolveWsBase();
+    const token = localStorage.getItem("token");
+    const tokenParam = token ? `?token=${token}` : "";
+    
     if (path.startsWith("/return-")) {
       if (path === "/return-phone")
-        return {
-          url: `http://localhost:8000/ws/log-hp`,
-          action: "mengembalikan",
-        };
+        return { url: `${base}/ws/log-hp${tokenParam}`, action: "mengembalikan" };
       if (path === "/return-laptop")
-        return { url: `${base}/ws/log-laptop`, action: "mengembalikan" };
+        return { url: `${base}/ws/log-laptop${tokenParam}`, action: "mengembalikan" };
     } else if (path.startsWith("/take-")) {
       if (path === "/take-phone")
-        return { url: `${base}/ws/log-hp`, action: "mengambil" };
+        return { url: `${base}/ws/log-hp${tokenParam}`, action: "mengambil" };
       if (path === "/take-laptop")
-        return { url: `${base}/ws/log-laptop`, action: "mengambil" };
+        return { url: `${base}/ws/log-laptop${tokenParam}`, action: "mengambil" };
     }
-    return { url: `${base}/ws/log-hp`, action: "mengambil" };
+    return { url: `${base}/ws/log-hp${tokenParam}`, action: "mengambil" };
   };
   const sendFrame = useCallback((action: "mengambil" | "mengembalikan") => {
+    console.log("sendFrame called, action:", action);
     if (
       !videoRef.current ||
       !wsRef.current ||
       wsRef.current.readyState !== WebSocket.OPEN
-    )
+    ) {
+      console.log("sendFrame early return - video:", !!videoRef.current, "ws:", !!wsRef.current, "wsState:", wsRef.current?.readyState);
       return;
+    }
     const video = videoRef.current;
-    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.log("sendFrame early return - video dimensions:", video.videoWidth, video.videoHeight);
+      return;
+    }
     try {
       const targetWidth = Math.min(640, video.videoWidth);
       const targetHeight = Math.round(
@@ -190,8 +196,11 @@ export default function OpenCVCameraComponent() {
       if (!ctx) return;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const frameData = canvas.toDataURL("image/jpeg", 0.6);
+      console.log("Sending frame to WebSocket, size:", frameData.length);
       wsRef.current.send(JSON.stringify({ frame: frameData, action: action }));
-    } catch (err) {}
+    } catch (err) {
+      console.log("sendFrame error:", err);
+    }
   }, []);
 
   const scheduleReconnect = () => {
@@ -207,8 +216,10 @@ export default function OpenCVCameraComponent() {
   const startWebSocket = useCallback(() => {
     try {
       const { url, action } = getWsConfig();
+      console.log("Starting WebSocket connection to:", url);
       wsRef.current = new WebSocket(url);
       wsRef.current.onopen = () => {
+        console.log("WebSocket connected!");
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
@@ -221,18 +232,24 @@ export default function OpenCVCameraComponent() {
         intervalRef.current = setInterval(() => sendFrame(action), 2000);
       };
       wsRef.current.onmessage = (event) => {
+        console.log("WebSocket message received:", event.data);
         try {
           const data: WebSocketResponse = JSON.parse(event.data);
+          console.log("Parsed results:", data.results);
           setResults(data.results || []);
-        } catch (err) {}
+        } catch (err) {
+          console.log("onmessage parse error:", err);
+        }
       };
-      wsRef.current.onclose = () => {
+      wsRef.current.onclose = (e) => {
+        console.log("WebSocket closed, code:", e.code, "reason:", e.reason);
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timerRef.current) clearInterval(timerRef.current);
         setIsConnected(false);
         if (!manuallyStoppedRef.current) scheduleReconnect();
       };
-      wsRef.current.onerror = () => {
+      wsRef.current.onerror = (e) => {
+        console.log("WebSocket error:", e);
         setError("WebSocket connection error");
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timerRef.current) clearInterval(timerRef.current);
