@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 
-from app.core.config import ORIGINS, ALLOW_ALL
 from app.core.cors import setup_cors
 from app.core.startup import startup_event
 from app.core.shutdown import shutdown_event
@@ -13,7 +12,7 @@ from app.middleware.admin_middleware import AdminMiddleware
 
 app = FastAPI(root_path="/api", docs_url="/docs", openapi_url="/openapi.json")
 
-setup_cors(app, ORIGINS, ALLOW_ALL)
+setup_cors(app)
 
 init_db()
 

@@ -53,7 +53,7 @@ def decode_token_get_user(token: str):
             raise HTTPException(status_code=401, detail="Invalid token payload")
         db: Session = SessionLocal()
         try:
-            user = db.query(User).filter(User.id == int(user_id)).first()
+            user = db.query(User).filter(User.id == user_id).first()
             if not user:
                 raise HTTPException(status_code=401, detail="User not found")
             return {
